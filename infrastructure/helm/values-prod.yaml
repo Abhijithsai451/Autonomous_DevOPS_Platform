@@ -1,0 +1,14 @@
+global:
+  environment: "prod"
+  logLevel: "INFO"
+  imagePullPolicy: "Always"
+
+services:
+  identity:
+    replicas: 3
+  organization:
+    replicas: 3
+  workflow:
+    replicas: 4
+  agentRuntime:
+    replicas: 4

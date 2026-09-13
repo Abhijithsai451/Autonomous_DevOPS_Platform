@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infra-nats-pvc
+  namespace: cortexops-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infra-nats
+  namespace: cortexops-system
+  labels:
+    app: infra-nats
+    tier: infrastructure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infra-nats
+  template:
+    metadata:
+      labels:
+        app: infra-nats
+    spec:
+      containers:
+        - name: infra-nats
+          image: nats:2.10-alpine
+          args: ["-js", "-sd", "/data"]
+          ports:
+            - containerPort: 4222
+              name: client
+            - containerPort: 8222
+              name: monitor
+          volumeMounts:
+            - name: nats-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: nats-data
+          persistentVolumeClaim:
+            claimName: infra-nats-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infra-nats
+  namespace: cortexops-system
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4222
+      name: client
+      targetPort: 4222
+    - port: 8222
+      name: monitor
+      targetPort: 8222
+  selector:
+    app: infra-nats

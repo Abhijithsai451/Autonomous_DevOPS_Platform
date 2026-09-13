@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cortexops-workflow
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: cortexops-workflow
+    tier: engine
+    {{- include "cortexops.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.workflow.replicas }}
+  selector:
+    matchLabels:
+      app: cortexops-workflow
+  template:
+    metadata:
+      labels:
+        app: cortexops-workflow
+    spec:
+      containers:
+        - name: cortexops-workflow
+          image: "{{ .Values.global.imageRegistry }}/workflow:{{ .Values.services.workflow.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "cortexops_workflow"
+          envFrom:
+            - configMapRef:
+                name: cortexops-common-config
+            - secretRef:
+                name: cortexops-common-secrets
+          resources:
+            {{- toYaml .Values.services.workflow.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 10
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cortexops-workflow
+  namespace: {{ .Values.global.namespace }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: cortexops-workflow
