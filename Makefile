@@ -6,7 +6,7 @@
 
 # Configuration Variables
 SHELL := /bin/bash
-CHART_DIR := infrastructure/helm/cortexops
+CHART_DIR := infrastructure/helm/
 RELEASE_NAME := cortexops
 NAMESPACE := cortexops-system
 
@@ -38,36 +38,21 @@ helm-template-prod:
 k8s-init-namespace:
 	@kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
 
-helm-install-dev: k8s-init-namespace
+helm-install-dev: k8s-init-namespace ## Install Helm chart in DEV environment
 	@echo "==> Deploying CortexOps to DEV environment..."
-	helm install $(RELEASE_NAME) $(CHART_DIR) \
-		--namespace $(NAMESPACE) \
-		-f $(CHART_DIR)/values.yaml \
-		-f $(CHART_DIR)/values-dev.yaml
+	helm install $(RELEASE_NAME) $(CHART_DIR) -n $(NAMESPACE) -f $(CHART_DIR)/values.yaml -f $(CHART_DIR)/values-dev.yaml
 
-helm-upgrade-dev: k8s-init-namespace
+helm-upgrade-dev: k8s-init-namespace ## Upgrade running DEV deployment
 	@echo "==> Upgrading CortexOps in DEV environment..."
-	helm upgrade $(RELEASE_NAME) $(CHART_DIR) \
-		--namespace $(NAMESPACE) \
-		-f $(CHART_DIR)/values.yaml \
-		-f $(CHART_DIR)/values-dev.yaml \
-		--atomic --timeout 5m0s
+	helm upgrade $(RELEASE_NAME) $(CHART_DIR) -n $(NAMESPACE) -f $(CHART_DIR)/values.yaml -f $(CHART_DIR)/values-dev.yaml --atomic --timeout 5m0s
 
-helm-install-prod: k8s-init-namespace
+helm-install-prod: k8s-init-namespace ## Install Helm chart in PROD environment
 	@echo "==> Deploying CortexOps to PROD environment..."
-	helm install $(RELEASE_NAME) $(CHART_DIR) \
-		--namespace $(NAMESPACE) \
-		-f $(CHART_DIR)/values.yaml \
-		-f $(CHART_DIR)/values-prod.yaml
+	helm install $(RELEASE_NAME) $(CHART_DIR) -n $(NAMESPACE) -f $(CHART_DIR)/values.yaml -f $(CHART_DIR)/values-prod.yaml
 
-helm-upgrade-prod: k8s-init-namespace
+helm-upgrade-prod: k8s-init-namespace ## Upgrade running PROD deployment
 	@echo "==> Upgrading CortexOps in PROD environment..."
-	helm upgrade $(RELEASE_NAME) $(CHART_DIR) \
-		--namespace $(NAMESPACE) \
-		-f $(CHART_DIR)/values.yaml \
-		-f $(CHART_DIR)/values-prod.yaml \
-		--atomic --timeout 10m0s
-
+	helm upgrade $(RELEASE_NAME) $(CHART_DIR) -n $(NAMESPACE) -f $(CHART_DIR)/values.yaml -f $(CHART_DIR)/values-prod.yaml --atomic --timeout 10m0s
 helm-uninstall:
 	@echo "==> Uninstalling $(RELEASE_NAME) from namespace $(NAMESPACE)..."
 	helm uninstall $(RELEASE_NAME) --namespace $(NAMESPACE)
