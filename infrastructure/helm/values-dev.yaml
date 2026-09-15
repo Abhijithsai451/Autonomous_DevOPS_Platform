@@ -1,0 +1,13 @@
+global:
+  environment: "dev"
+  logLevel: "DEBUG"
+
+services:
+  identity:
+    replicas: 1
+  organization:
+    replicas: 1
+  workflow:
+    replicas: 1
+  agentRuntime:
+    replicas: 1

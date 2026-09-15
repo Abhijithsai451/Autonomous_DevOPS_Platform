@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cortexops-common-config
+  namespace: cortexops-system
+data:
+  CORTEXOPS_ENV: "dev"
+  LOG_LEVEL: "INFO"
+  POSTGRES_HOST: "infra-postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "cortexops"
+  POSTGRES_USER: "postgres"
+  NATS_URL: "nats://infra-nats:4222"
+  REDIS_HOST: "infra-redis"
+  REDIS_PORT: "6379"

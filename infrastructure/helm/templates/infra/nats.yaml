@@ -1,0 +1,80 @@
+{{- if .Values.infrastructure.nats.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infra-nats-pvc
+  namespace: {{ .Values.global.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.infrastructure.nats.storageSize }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infra-nats
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: infra-nats
+    tier: infrastructure
+    {{- include "cortexops.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infra-nats
+  template:
+    metadata:
+      labels:
+        app: infra-nats
+    spec:
+      containers:
+        - name: infra-nats
+          image: {{ .Values.infrastructure.nats.image }}
+          args: ["-js", "-sd", "/data"]
+          ports:
+            - containerPort: 4222
+              name: client
+            - containerPort: 8222
+              name: monitor
+          volumeMounts:
+            - name: nats-data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.infrastructure.nats.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: nats-data
+          persistentVolumeClaim:
+            claimName: infra-nats-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infra-nats
+  namespace: {{ .Values.global.namespace }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 4222
+      name: client
+      targetPort: 4222
+    - port: 8222
+      name: monitor
+      targetPort: 8222
+  selector:
+    app: infra-nats
+{{- end }}

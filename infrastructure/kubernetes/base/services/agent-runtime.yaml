@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cortexops-agent-runtime
+  namespace: cortexops-system
+  labels:
+    app: cortexops-agent-runtime
+    tier: engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cortexops-agent-runtime
+  template:
+    metadata:
+      labels:
+        app: cortexops-agent-runtime
+    spec:
+      containers:
+        - name: cortexops-agent-runtime
+          image: cortexops/agent-runtime:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: SERVICE_NAME
+              value: "cortexops_agent_runtime"
+          envFrom:
+            - configMapRef:
+                name: cortexops-common-config
+            - secretRef:
+                name: cortexops-common-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 10
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cortexops-agent-runtime
+  namespace: cortexops-system
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: cortexops-agent-runtime

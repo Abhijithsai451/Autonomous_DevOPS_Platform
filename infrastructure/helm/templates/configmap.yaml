@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cortexops-common-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "cortexops.labels" . | nindent 4 }}
+data:
+  CORTEXOPS_ENV: {{ .Values.global.environment | quote }}
+  LOG_LEVEL: {{ .Values.global.logLevel | quote }}
+  POSTGRES_HOST: "infra-postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "cortexops"
+  POSTGRES_USER: "postgres"
+  NATS_URL: "nats://infra-nats:4222"
+  REDIS_HOST: "infra-redis"
+  REDIS_PORT: "6379"

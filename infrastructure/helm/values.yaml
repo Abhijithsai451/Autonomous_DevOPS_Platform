@@ -1,0 +1,88 @@
+global:
+  environment: "dev"
+  logLevel: "INFO"
+  namespace: "cortexops-system"
+  imageRegistry: "docker.io/cortexops"
+  imagePullPolicy: "IfNotPresent"
+
+infrastructure:
+  postgres:
+    enabled: true
+    image: "postgres:15-alpine"
+    storageSize: "10Gi"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+  nats:
+    enabled: true
+    image: "nats:2.10-alpine"
+    storageSize: "5Gi"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+  redis:
+    enabled: true
+    image: "redis:7-alpine"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+services:
+  identity:
+    replicas: 2
+    tag: "latest"
+    resources:
+      requests:
+        cpu: "150m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+  organization:
+    replicas: 2
+    tag: "latest"
+    resources:
+      requests:
+        cpu: "150m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+  workflow:
+    replicas: 2
+    tag: "latest"
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "384Mi"
+      limits:
+        cpu: "750m"
+        memory: "768Mi"
+  agentRuntime:
+    replicas: 2
+    tag: "latest"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+
+secrets:
+  postgresPassword: "CHANGE_ME_IN_PROD"
+  redisPassword: ""
+  keycloakClientSecret: "CHANGE_ME_IN_PROD"
+  openaiApiKey: "CHANGE_ME_IN_PROD"
