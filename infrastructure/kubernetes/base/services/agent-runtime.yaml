@@ -19,9 +19,10 @@ spec:
       containers:
         - name: cortexops-agent-runtime
           image: cortexops/agent-runtime:latest
+          command: [ "python", "-m", "uvicorn", "apps.agent_runtime.agent_runtime_main:app", "--host", "0.0.0.0", "--port", "8003" ]
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8000
+            - containerPort: 8003
               name: http
           env:
             - name: SERVICE_NAME
@@ -41,19 +42,19 @@ spec:
           startupProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8003
             failureThreshold: 10
             periodSeconds: 3
           readinessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8003
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8003
             initialDelaySeconds: 15
             periodSeconds: 10
 ---
@@ -65,8 +66,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8000
-      targetPort: 8000
+    - port: 8003
+      targetPort: 8003
       name: http
   selector:
     app: cortexops-agent-runtime

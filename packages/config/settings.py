@@ -7,10 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_FILE_PATH = os.getenv("ENV_FILE", str(BASE_DIR / ".env"))
 class CommonSettings(BaseSettings):
-    """
-    Standardized CortexOps platform settings contract.
-    Enforces fail-fast validation and secret safety across all microservices.
-    """
+
     model_config = SettingsConfigDict(
         env_file=(ENV_FILE_PATH, ".env"),
         env_file_encoding="utf-8",
@@ -18,9 +15,6 @@ class CommonSettings(BaseSettings):
         case_sensitive=True
     )
 
-    # ------------------------------------------------------------------
-    # Environment & Application Identity
-    # ------------------------------------------------------------------
     CORTEXOPS_ENV: Literal["local", "dev", "staging", "prod"] = Field(
         default="local",
         description="Runtime environment identifier"

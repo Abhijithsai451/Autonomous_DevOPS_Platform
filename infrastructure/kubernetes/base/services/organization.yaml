@@ -19,9 +19,10 @@ spec:
       containers:
         - name: cortexops-organization
           image: cortexops/organization:latest
+          command: ["python", "-m", "uvicorn", "apps.organization.org_main:app", "--host", "0.0.0.0", "--port", "8001"]
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8000
+            - containerPort: 8001
               name: http
           env:
             - name: SERVICE_NAME
@@ -41,19 +42,19 @@ spec:
           startupProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8001
             failureThreshold: 10
             periodSeconds: 3
           readinessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8001
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8001
             initialDelaySeconds: 15
             periodSeconds: 10
 ---
@@ -65,8 +66,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8000
-      targetPort: 8000
+    - port: 8001
+      targetPort: 8001
       name: http
   selector:
     app: cortexops-organization

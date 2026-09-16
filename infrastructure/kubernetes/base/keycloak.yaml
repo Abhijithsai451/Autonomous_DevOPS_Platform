@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infra-keycloak
+  namespace: cortexops-system
+  labels:
+    app: infra-keycloak
+    tier: infrastructure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infra-keycloak
+  template:
+    metadata:
+      labels:
+        app: infra-keycloak
+    spec:
+      containers:
+        - name: infra-keycloak
+          image: quay.io/keycloak/keycloak:24.0
+          args: ["start-dev"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: "admin"
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              value: "admin"
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: "adminpassword"
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL
+              value: "jdbc:postgresql://infra-pgdb:5432/identity"
+            - name: KC_DB_USERNAME
+              value: "user"
+            - name: KC_DB_PASSWORD
+              value: "password"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HTTP_PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infra-keycloak
+  namespace: cortexops-system
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app: infra-keycloak
