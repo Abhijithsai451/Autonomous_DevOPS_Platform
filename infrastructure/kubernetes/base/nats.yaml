@@ -35,8 +35,6 @@ spec:
           ports:
             - containerPort: 4222
               name: client
-            - containerPort: 8222
-              name: monitor
           volumeMounts:
             - name: nats-data
               mountPath: /data
@@ -48,15 +46,13 @@ spec:
               cpu: "500m"
               memory: "512Mi"
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 8222
+            tcpSocket:
+              port: 4222
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8222
+            tcpSocket:
+              port: 4222
             initialDelaySeconds: 10
             periodSeconds: 10
       volumes:
@@ -75,8 +71,5 @@ spec:
     - port: 4222
       name: client
       targetPort: 4222
-    - port: 8222
-      name: monitor
-      targetPort: 8222
   selector:
     app: infra-nats

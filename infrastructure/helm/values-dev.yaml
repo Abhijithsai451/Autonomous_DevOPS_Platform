@@ -1,13 +1,18 @@
 global:
   environment: "dev"
   logLevel: "DEBUG"
-
+  imageRegistry: "docker.io/cortexops"
+  imagePullPolicy: "Never"
 services:
   identity:
     replicas: 1
+    tag: "latest"
   organization:
     replicas: 1
+    tag: "latest"
   workflow:
     replicas: 1
+    tag: "latest"
   agentRuntime:
     replicas: 1
+    tag: "latest"

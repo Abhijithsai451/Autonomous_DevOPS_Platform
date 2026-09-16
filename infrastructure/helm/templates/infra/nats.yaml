@@ -45,15 +45,13 @@ spec:
           resources:
             {{- toYaml .Values.infrastructure.nats.resources | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 8222
+            tcpSocket:
+              port: 4222
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8222
+            tcpSocket:
+              port: 4222
             initialDelaySeconds: 10
             periodSeconds: 10
       volumes:
