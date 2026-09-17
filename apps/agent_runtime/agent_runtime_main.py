@@ -38,7 +38,7 @@ async def agent_lifespan(app: FastAPI):
 
     logger.info("NATS Messaging Core successfully disconnected from Agent Runtime.")
 
-app = FastAPI(title="ADD Platform Agent Runtime Service", lifespan=agent_lifespan)
+app = FastAPI(title="ADD_Platform Agent Runtime Service", lifespan=agent_lifespan)
 
 @app.post("/api/v1/agents/execute")
 async def execute_agent(payload: dict):

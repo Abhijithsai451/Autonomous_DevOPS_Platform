@@ -52,7 +52,7 @@ async def organization_lifespan(app: FastAPI):
 
 
 
-app = FastAPI(title="ADD Platform Organization Service", lifespan=organization_lifespan)
+app = FastAPI(title="ADD_Platform Organization Service", lifespan=organization_lifespan)
 
 @app.api_route("/health",methods=["GET", "HEAD"], tags=["System"])
 async def health_check():
