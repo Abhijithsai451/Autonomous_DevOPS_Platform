@@ -8,10 +8,16 @@ metadata:
 data:
   CORTEXOPS_ENV: {{ .Values.global.environment | quote }}
   LOG_LEVEL: {{ .Values.global.logLevel | quote }}
-  POSTGRES_HOST: "infra-postgres"
+  POSTGRES_HOST: "infra-pgdb"
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: "cortexops"
   POSTGRES_USER: "postgres"
   NATS_URL: "nats://infra-nats:4222"
   REDIS_HOST: "infra-redis"
   REDIS_PORT: "6379"
+  IDENTITY_DATABASE_URL: "postgresql://postgres:password@infra-pgdb:5432/identity"
+  KEYCLOAK_URL: "http://infra_keycloak:8080"
+  KEYCLOAK_REALM: "cortexops"
+  KEYCLOAK_CLIENT_ID: "cortexops-backend"
+  KEYCLOAK_CLIENT_SECRET: "Ulm6g7u1kcFWDb9kyT5qtfZmM6kAWDca"
+  KEYCLOAK_ADMIN_USER: "admin"
+  KEYCLOAK_ADMIN_PASSWORD: "adminpassword"

@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cortexops-system
+
+configMapGenerator:
+  - name: postgres-init-scripts
+    files:
+      - scripts/01_identity_schema.sql
+      - scripts/02_organization_schema.sql
+      - scripts/03_workflow_schema.sql
+      - scripts/04_agent_runtime_schema.sql
+
+resources:
+    - infrastructure/kubernetes/base/configmap.yaml
+    - infrastructure/kubernetes/base/secret.yaml
+    - infrastructure/kubernetes/base/postgres.yaml
+    - infrastructure/kubernetes/base/nats.yaml
+    - infrastructure/kubernetes/base/redis.yaml
+    - infrastructure/kubernetes/base/keycloak.yaml
+    - infrastructure/kubernetes/base/services/identity.yaml
+    - infrastructure/kubernetes/base/services/organization.yaml
+    - infrastructure/kubernetes/base/services/workflow.yaml
+    - infrastructure/kubernetes/base/services/agent-runtime.yaml

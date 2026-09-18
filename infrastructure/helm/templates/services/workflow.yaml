@@ -21,8 +21,9 @@ spec:
         - name: cortexops-workflow
           image: "{{ .Values.global.imageRegistry }}/workflow:{{ .Values.services.workflow.tag }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: [ "python", "-m", "uvicorn", "apps.workflow.workflow_main:app", "--host", "0.0.0.0", "--port", "8002" ]
           ports:
-            - containerPort: 8000
+            - containerPort: 8002
               name: http
           env:
             - name: SERVICE_NAME
@@ -37,19 +38,19 @@ spec:
           startupProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8002
             failureThreshold: 10
             periodSeconds: 3
           readinessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8002
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /health
-              port: 8000
+              port: 8002
             initialDelaySeconds: 15
             periodSeconds: 10
 ---
@@ -61,8 +62,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8000
-      targetPort: 8000
+    - port: 8002
+      targetPort: 8002
       name: http
   selector:
     app: cortexops-workflow

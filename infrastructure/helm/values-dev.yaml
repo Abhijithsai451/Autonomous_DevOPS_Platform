@@ -16,3 +16,9 @@ services:
   agentRuntime:
     replicas: 1
     tag: "latest"
+
+secrets:
+  postgresPassword: "password"
+  redisPassword: "password"
+  keycloakClientSecret: "dev-secret"
+  openaiApiKey: "dev-key"

@@ -21,6 +21,7 @@ spec:
         - name: cortexops-identity
           image: "{{ .Values.global.imageRegistry }}/identity:{{ .Values.services.identity.tag }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: [ "python", "-m", "uvicorn", "apps.identity.identity_main:app", "--host", "0.0.0.0", "--port", "8000" ]
           ports:
             - containerPort: 8000
               name: http
