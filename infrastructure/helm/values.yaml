@@ -82,7 +82,7 @@ services:
         memory: "1Gi"
 
 secrets:
-  postgresPassword: "CHANGE_ME_IN_PROD"
-  redisPassword: ""
+  postgresPassword: "password"
+  redisPassword: "password"
   keycloakClientSecret: "CHANGE_ME_IN_PROD"
   openaiApiKey: "CHANGE_ME_IN_PROD"

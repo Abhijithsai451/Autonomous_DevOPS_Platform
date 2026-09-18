@@ -6,9 +6,8 @@ metadata:
 data:
   CORTEXOPS_ENV: "dev"
   LOG_LEVEL: "INFO"
-  POSTGRES_HOST: "infra-postgres"
+  POSTGRES_HOST: "infra-pgdb"
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: "cortexops"
   POSTGRES_USER: "postgres"
   NATS_URL: "nats://infra-nats:4222"
   REDIS_HOST: "infra-redis"

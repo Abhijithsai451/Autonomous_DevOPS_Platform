@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: infra-postgres-pvc
+  name: infra-pgdb-pvc
   namespace: {{ .Values.global.namespace }}
 spec:
   accessModes:
@@ -14,24 +14,24 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: infra-postgres
+  name: infra-pgdb
   namespace: {{ .Values.global.namespace }}
   labels:
-    app: infra-postgres
+    app: infra-pgdb
     tier: infrastructure
     {{- include "cortexops.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: infra-postgres
+      app: infra-pgdb
   template:
     metadata:
       labels:
-        app: infra-postgres
+        app: infra-pgdb
     spec:
       containers:
-        - name: infra-postgres
+        - name: infra-pgdb
           image: {{ .Values.infrastructure.postgres.image }}
           ports:
             - containerPort: 5432
@@ -58,12 +58,12 @@ spec:
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: infra-postgres-pvc
+            claimName: infra-pgdb-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: infra-postgres
+  name: infra-pgdb
   namespace: {{ .Values.global.namespace }}
 spec:
   type: ClusterIP
@@ -71,5 +71,5 @@ spec:
     - port: 5432
       targetPort: 5432
   selector:
-    app: infra-postgres
+    app: infra-pgdb
 {{- end }}
