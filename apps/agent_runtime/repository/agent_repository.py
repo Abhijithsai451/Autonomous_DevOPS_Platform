@@ -19,7 +19,7 @@ class AgentRepository:
     def list_active(self)-> list[Agent]:
         return self.db.query(Agent).filter(Agent.status=="ACTIVE").all()
 
-    def create(self, agent_id: UUID, name)-> Optional[Agent]:
-        agent = Agent(id=agent_id, name=name, status=AgentStatus.ACTIVE)
+    def create(self, agent_id: UUID, name, slug)-> Optional[Agent]:
+        agent = Agent(id=agent_id, name=name,slug = slug, status=AgentStatus.ACTIVE)
         self.db.add(agent)
         return agent

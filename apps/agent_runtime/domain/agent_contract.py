@@ -1,3 +1,4 @@
+from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, Optional
@@ -40,9 +41,10 @@ class AgentResult:
     execution_duration_ms: float = 0.0
 
 
-class BaseAgent:
+class BaseAgent(ABC):
     """
     Abstract contract for all execution units within the Agent Runtime.
     """
+    @abstractmethod
     def execute(self, context: AgentContext) -> AgentResult:
         raise NotImplementedError("Agents must implement their own execute logic.")

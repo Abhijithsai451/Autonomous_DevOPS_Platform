@@ -19,6 +19,8 @@ tenacity
 nats-py
 # LLM
 openai
+langchain_core
+langgraph
 
 # Observability & Evaluation
 opentelemetry-api
