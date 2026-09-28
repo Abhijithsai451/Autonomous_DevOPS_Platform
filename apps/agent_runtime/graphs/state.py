@@ -5,9 +5,10 @@ class AgentState(TypedDict):
     run_id : str
     task_id: str
     agent_id: str
+    workflow_instance_id: str
 
-    input: Dict[str, Any]
-    output: Optional[Dict[str, Any]]
+    input_data: Dict[str, Any]
+    output_data: Optional[Dict[str, Any]]
     error: Optional[Dict[str, Any]]
 
     messages: List[BaseMessage]
