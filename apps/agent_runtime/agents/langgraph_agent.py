@@ -1,7 +1,8 @@
 from apps.agent_runtime.domain.agent_contract import BaseAgent, AgentResult, AgentContext, AgentExecutionStatus, \
     AgentError
-from apps.agent_runtime.graphs.base_graph import base_graph
+from apps.agent_runtime.graphs.base_graph import base_graph, build_base_agent_graph
 from apps.agent_runtime.graphs.state import AgentState
+from apps.agent_runtime.infrastructure.checkpoint import get_postgres_checkpointer
 
 
 class LangGraphAgent(BaseAgent):
@@ -21,9 +22,16 @@ class LangGraphAgent(BaseAgent):
             "tool_results": [],
             "status": AgentExecutionStatus.RUNNING.value,
         }
-
+        config = {
+            "configurable": {
+                "thread_id": str(context.run_id),
+            }
+        }
         try:
-            final_state = base_graph.invoke(initial_state)
+            with get_postgres_checkpointer() as checkpointer:
+                graph = build_base_agent_graph(checkpointer = checkpointer)
+                final_state = graph.invoke(initial_state, config = config)
+
             return AgentResult(
                 status = AgentExecutionStatus(final_state["status"]),
                 output_data = final_state.get("output_data"),
