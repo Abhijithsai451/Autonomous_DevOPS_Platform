@@ -2,11 +2,14 @@ import time
 from datetime import timezone, datetime
 from uuid import UUID, uuid4
 
+from langgraph.types import Command
 from sqlalchemy.orm import Session
 
 from apps.agent_runtime.agents.langgraph_agent import LangGraphAgent
 from apps.agent_runtime.domain.agent_contract import AgentContext, AgentExecutionStatus
 from apps.agent_runtime.domain.agent_runs import AgentRuns, RunStatus
+from apps.agent_runtime.graphs.base_graph import build_base_agent_graph
+from apps.agent_runtime.infrastructure.checkpoint import get_postgres_checkpointer
 from apps.agent_runtime.repository.agent_repository import AgentRepository
 from apps.agent_runtime.repository.outbox_repository import OutboxRepository
 
@@ -86,4 +89,17 @@ class AgentExecutionService:
 
         self.db.commit()
         return agent_run
+
+    def resume_execution(self, run_id: str, approved: bool, reason: str = "")-> dict:
+        config = {"configurable": {"thread_id": str(run_id)}}
+
+        with get_postgres_checkpointer() as checkpointer:
+            graph = build_base_agent_graph(checkpointer = checkpointer)
+
+            final_state = graph.invoke(
+                Command(resume = {"approved":approved, "reason": reason}),
+                config = config
+            )
+        return final_state
+    
 

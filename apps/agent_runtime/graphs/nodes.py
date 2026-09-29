@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langgraph.types import interrupt
 
 from apps.agent_runtime.graphs.state import AgentState
 from apps.agent_runtime.llm.factory import get_llm_model
@@ -9,16 +10,26 @@ from apps.agent_runtime.tools.system_tool import DEFAULT_TOOLS, TOOLS_BY_NAME
 
 def analyze_node(state: AgentState) -> Dict[str, Any]:
     """
-    Parses the input_data and seeds the initial HumanMessage if empty
+    Pauses the graph Execution and wait for the Human Approval
     """
-    messages = list(state.get("messages",[]))
-    if not messages:
-        prompt_text = state['input_data'].get("prompt") or str(state["input_data"])
-        messages.append(HumanMessage(content = prompt_text))
-    return {
-        "messages": messages,
-        "status": "RUNNING"
-    }
+    tool_calls = []
+    messages = state.get("messages", [])
+    if messages and isinstance(messages[-1], AIMessage):
+        tool_calls = messages[-1].tool_calls
+
+    approval_decision = interrupt({
+        "reason": "HUMAN_APPROVAL_REQUIRED",
+        "pending_tool_calls": tool_calls,
+        "run_id": state.get("run_id"),
+    })
+
+    if not approval_decision.get("approved", False):
+        return {
+            "status": "CANCELLED",
+            "error": {"code": "APPROVAL_REJECTED", "message": approval_decision.get("reason", "Rejected by operator")}
+        }
+
+    return {"status": "RUNNING"}
 
 def llm_node(state: AgentState)-> Dict[str, Any]:
     """
