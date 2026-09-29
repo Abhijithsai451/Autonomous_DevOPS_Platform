@@ -17,11 +17,13 @@ tenacity
 
 # Messaging
 nats-py
+
 # LLM
 openai
 langchain_core
 langgraph
 langchain_openai
+langchain-google-genai
 
 # Observability & Evaluation
 opentelemetry-api
