@@ -21,6 +21,7 @@ nats-py
 openai
 langchain_core
 langgraph
+langchain_openai
 
 # Observability & Evaluation
 opentelemetry-api
