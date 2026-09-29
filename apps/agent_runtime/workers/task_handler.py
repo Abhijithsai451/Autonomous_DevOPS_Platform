@@ -9,6 +9,7 @@ from apps.agent_runtime.infrastructure.database import agent_db_session
 from packages.logging.structured_logs import struc_logger as logger
 
 CONSUMER_GROUP = "agent_runtime_task_consumer"
+
 async def handle_task_event(payload: Dict[str, Any], metadata: Dict[str, Any]) -> None:
     event_id = UUID(payload["event_id"])
     task_id = UUID(payload["task_id"])

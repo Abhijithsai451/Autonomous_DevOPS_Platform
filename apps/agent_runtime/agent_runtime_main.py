@@ -15,6 +15,7 @@ from apps.agent_runtime.infrastructure.telemetry import AgentObservability
 from apps.agent_runtime.workers.task_handler import handle_task_event
 from packages.redis.redis_client import redis_client
 from packages.telemetry.provider import init_telemetry
+from apps.agent_runtime.application.execution_service import AgentExecutionService
 
 
 @asynccontextmanager
@@ -74,8 +75,6 @@ async def execute_agent(payload: dict):
         db = next(db_gen)
         try:
             logger.info("Agent starting execution", extra_data={"agent_type": agent_type})
-
-            from apps.agent_runtime.application.execution_service import AgentExecutionService
             execution_service = AgentExecutionService(db)
 
             run_result = execution_service.execute_task(

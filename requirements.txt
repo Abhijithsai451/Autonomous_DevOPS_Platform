@@ -10,6 +10,7 @@ structlog>=24.1.0
 sqlalchemy
 redis
 redis-async
+psycopg-pool
 # security
 pyjwt
 tenacity
@@ -24,6 +25,7 @@ langchain_core
 langgraph
 langchain_openai
 langchain-google-genai
+langgraph-checkpoint-postgres
 
 # Observability & Evaluation
 opentelemetry-api
