@@ -39,3 +39,8 @@ python-jose[cryptography]
 pytest
 httpx2
 pytest-asyncio
+
+# gRPC
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+protobuf>=4.25.0

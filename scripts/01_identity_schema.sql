@@ -154,7 +154,7 @@ inserted_roles_raw AS (
     INSERT INTO identity.roles (name, description, system_role)
     VALUES
         ('AdminRole', 'Full administrative access over all resource schemas', true),
-        ('DeveloperRole', 'Read-oriented access policies for operations workspaces', false)
+        ('DeveloperRole', 'Read-oriented access tools for operations workspaces', false)
     RETURNING id, name
 ),
 inserted_roles AS (
