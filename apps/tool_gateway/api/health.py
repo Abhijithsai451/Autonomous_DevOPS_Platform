@@ -1,11 +1,11 @@
-from fastapi import FastAPI
+from fastapi import APIRouter
 
-health_app = FastAPI()
+router = APIRouter(tags=["Health"])
 
-@health_app.get("/healthz")
+@router.get("/health")
 async def healthz():
-    return {"status": "ok", "service": "tool_gateway"}
+    return {"status": "ok", "service": "tool-gateway"}
 
-@health_app.get("/ready")
+@router.get("/ready")
 async def ready():
     return {"status": "ready"}

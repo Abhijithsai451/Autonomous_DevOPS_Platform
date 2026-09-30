@@ -88,6 +88,28 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://cortexops_otel_collector:4317
     networks:
       - shared_network
+  tool_gateway:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: cortexops_tool_gateway
+    ports:
+      - "8004:8004"
+    command: [ "python", "-m", "uvicorn", "apps.tool_gateway.tool_gateway_main:app", "--host", "0.0.0.0", "--port", "8004" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    env_file:
+      - ../../.env
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cortexops_otel_collector:4317
+    networks:
+      - shared_network
 networks:
   shared_network:
     name: cortexops_shared_network
