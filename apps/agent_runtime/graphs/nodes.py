@@ -5,7 +5,9 @@ from langgraph.types import interrupt
 
 from apps.agent_runtime.graphs.state import AgentState
 from apps.agent_runtime.llm.factory import get_llm_model
-from apps.agent_runtime.tools.system_tool import DEFAULT_TOOLS, TOOLS_BY_NAME
+from apps.agent_runtime.tools.registry import tool_registry
+from apps.agent_runtime.tools.sandbox import global_sandbox, SandboxExecutionError
+from apps.agent_runtime.tools.system_tool import DEFAULT_TOOLS
 
 
 def analyze_node(state: AgentState) -> Dict[str, Any]:
@@ -58,15 +60,21 @@ def tool_node(state: AgentState)-> Dict[str, Any]:
             tool_args = tool_call["args"]
             tool_call_id = tool_call["id"]
 
-            selected_tool = TOOLS_BY_NAME.get(tool_name)
+            selected_tool = tool_registry.get_tool(tool_name)
             if selected_tool:
                 try:
-                    result = selected_tool.invoke(tool_args)
+                    result = global_sandbox.run_sandboxed(
+                        func=selected_tool.invoke,
+                        args={"input": tool_args},
+                        timeout=15.0,
+                    )
                     tool_output = str(result)
+                except SandboxExecutionError as s_err:
+                    tool_output = f"Sandbox Violation: {str(s_err)}"
                 except Exception as e:
                     tool_output = f"Error executing {tool_name}: {str(e)}"
             else:
-                tool_output = f"Tool {tool_name} not found"
+                tool_output = f"Tool {tool_name} not found in the registry"
 
             tool_results.append(
                 {

@@ -5,7 +5,7 @@ from opentelemetry.sdk.resources import psutil
 
 
 @tool
-def get_system_tool()-> dict:
+def get_system_status()-> dict:
     """
     Returns basic system diagnostic metrics including platform, CPU and memory utilization
     """
@@ -17,6 +17,6 @@ def get_system_tool()-> dict:
         "status": "OPERATIONAL",
     }
 
-DEFAULT_TOOLS = [get_system_tool]
+DEFAULT_TOOLS = [get_system_status]
 TOOLS_BY_NAME = {t.name for t in DEFAULT_TOOLS}
 

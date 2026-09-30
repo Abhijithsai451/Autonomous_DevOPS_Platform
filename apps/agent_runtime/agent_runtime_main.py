@@ -12,11 +12,19 @@ from apps.agent_runtime.infrastructure.database import agent_runtime_db_client
 from apps.agent_runtime.infrastructure.outbox_publisher import agent_outbox_publisher
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.infrastructure.telemetry import AgentObservability
+from apps.agent_runtime.tools.python_interpreter import safe_python_interpreter
+from apps.agent_runtime.tools.registry import tool_registry
+from apps.agent_runtime.tools.system_tool import get_system_status
 from apps.agent_runtime.workers.task_handler import handle_task_event
 from packages.redis.redis_client import redis_client
 from packages.telemetry.provider import init_telemetry
 from apps.agent_runtime.application.execution_service import AgentExecutionService
 
+
+
+def register_default_tools():
+    tool_registry.register(get_system_status)
+    tool_registry.register(safe_python_interpreter)
 
 @asynccontextmanager
 async def agent_lifespan(app: FastAPI):
@@ -28,6 +36,9 @@ async def agent_lifespan(app: FastAPI):
     await redis_client.initialize()
     await nats.initialize()
     logger.info("NATS Core Messaging is successfully initialized for Agent Runtime Service")
+
+    register_default_tools()
+    logger.info("Tool Registry populated with default tools.")
 
     await nats.register_listener(
         subject = "workflow.events.tasks.ready",
