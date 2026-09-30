@@ -1,16 +1,15 @@
-import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from api import health
-from application.executor import ToolExecutionEngine
-from application.registry import tool_registry
+from apps.tool_gateway.api import health
+from apps.tool_gateway.application.executor import ToolExecutionEngine
+from apps.tool_gateway.application.registry import tool_registry
 from apps.tool_gateway.domain.tool_execution_request import ToolExecutionRequest
 from apps.tool_gateway.domain.tool_execution_result import ToolExecutionResult
-from infrastructure.struct_logger import struct_logger as logger
-from tools.echo import EchoTool
-from tools.http_request import HttpRequestTool
-from tools.json_transform import JsonTransformTool
+from apps.tool_gateway.infrastructure.struct_logger import struct_logger as logger
+from apps.tool_gateway.tools.echo import EchoTool
+from apps.tool_gateway.tools.http_request import HttpRequestTool
+from apps.tool_gateway.tools.json_transform import JsonTransformTool
 
 
 def register_default_tools():
