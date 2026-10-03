@@ -12,7 +12,7 @@ class BaseTool(ABC):
         pass
 
     def validate_input(self, input_data : Dict[str, Any])-> None:
-        if self.validation.input_schema:
+        if self.definition.input_schema:
             try:
                 validate(instance = input_data, schema= self.definition.input_schema)
             except ValidationError as e:

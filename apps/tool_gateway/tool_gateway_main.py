@@ -41,5 +41,6 @@ async def execute_tool(request: ToolExecutionRequest):
     """
     Standardized execution boundary endpoint called by Agent Runtime.
     """
+
     logger.info(f"Executing tool '{request.tool_slug}'", extra_data={"execution_id": request.execution_id})
     return await execution_engine.execute(request)
