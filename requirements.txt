@@ -1,6 +1,6 @@
 fastapi
 fastapi[opentelemetry]
-uvicorn
+uvicorn[standard]>=0.20.0
 python-multipart
 psycopg2-binary>=2.9.0
 pydantic-settings

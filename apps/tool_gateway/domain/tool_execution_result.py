@@ -18,4 +18,4 @@ class ToolExecutionResult(BaseModel):
     status: ToolExecutionStatus
     output: Dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
-    duration_ms: int
+    duration_ms: float
