@@ -5,7 +5,6 @@ from langgraph.types import interrupt
 
 from apps.agent_runtime.graphs.state import AgentState
 from apps.agent_runtime.llm.factory import get_llm_model
-from apps.agent_runtime.tools.registry import tool_registry
 from apps.agent_runtime.tools.sandbox import global_sandbox, SandboxExecutionError
 from apps.agent_runtime.tools.system_tool import DEFAULT_TOOLS
 

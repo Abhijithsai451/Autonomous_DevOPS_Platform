@@ -47,7 +47,7 @@ class AgentExecutionService:
                                workflow_instance_id = workflow_instance_id,
                                input_data = input_data,
                                configuration = agent.configuration or {}
-        )
+                            )
 
         result = self.agent_executor.execute(context)
 
