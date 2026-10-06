@@ -6,7 +6,7 @@ from apps.tool_gateway.infrastructure.struct_logger import struct_logger as logg
 from apps.tool_gateway.domain.tool_execution_request import ToolExecutionRequest
 from apps.tool_gateway.domain.tool_execution_result import ToolExecutionResult
 
-router = APIRouter(tags=["tools"])
+router = APIRouter(prefix="/api/v1/tools",tags=["tools"])
 
 execution_engine = ToolExecutionEngine(tool_registry)
 
