@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from apps.agent_runtime.infrastructure.database import agent_db_session, agent_runtime_db_client
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
@@ -13,7 +12,7 @@ async def health_check():
 
 
 @router.get("/ready", status_code=status.HTTP_200_OK)
-async def readiness_check(db: AsyncSession = Depends(agent_db_session)):
+def readiness_check(db: Session = Depends(agent_db_session)):
     try:
         is_alive = agent_runtime_db_client.check_health()
         if not is_alive:

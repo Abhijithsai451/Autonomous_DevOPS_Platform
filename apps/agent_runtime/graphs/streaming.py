@@ -1,8 +1,6 @@
 from typing import Dict, Any, AsyncGenerator
-
 from apps.agent_runtime.graphs.base_graph import build_base_agent_graph
 from apps.agent_runtime.infrastructure.checkpoint import get_postgres_checkpointer
-
 
 async def stream_agent_execution(initial_state: Dict[str, Any], run_id: str)-> AsyncGenerator[Dict[str, Any]]:
     """

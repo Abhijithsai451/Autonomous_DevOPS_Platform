@@ -2,11 +2,12 @@ fastapi
 fastapi[opentelemetry]
 uvicorn[standard]>=0.20.0
 python-multipart
-psycopg2-binary>=2.9.0
+psycopg2-binary
 pydantic-settings
 pydantic[email]
 structlog>=24.1.0
 jsonschema
+sqlalchemy[asyncio]
 
 # Database
 sqlalchemy
