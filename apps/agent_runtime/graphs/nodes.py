@@ -1,12 +1,10 @@
 from typing import Any, Dict
 
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import AIMessage
 from langgraph.types import interrupt
 
 from apps.agent_runtime.graphs.state import AgentState
 from apps.agent_runtime.llm.factory import get_llm_model
-from apps.agent_runtime.tools.sandbox import global_sandbox, SandboxExecutionError
-from apps.agent_runtime.tools.system_tool import DEFAULT_TOOLS
 
 
 def analyze_node(state: AgentState) -> Dict[str, Any]:
@@ -37,56 +35,11 @@ def llm_node(state: AgentState)-> Dict[str, Any]:
     Invokes the LLM model with the tools bound
     """
     llm = get_llm_model()
-    llm_with_tools = llm.bind_tools[DEFAULT_TOOLS]
 
-    response = llm_with_tools.invoke(state['messages'])
+    response = llm.invoke(state['messages'])
     updated_messages = list(state["messages"]) + [response]
 
     return {"messages": updated_messages}
-
-def tool_node(state: AgentState)-> Dict[str, Any]:
-    """
-    Executes tool calls requested in the latest AI Message
-    """
-    messages = list(state["messages"])
-    last_message = messages[-1]
-
-    tool_results = list(state.get("tool_results", []))
-
-    if isinstance(last_message, AIMessage) and last_message.tool_calls:
-        for tool_call in last_message.tool_calls:
-            tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
-            tool_call_id = tool_call["id"]
-
-            selected_tool = tool_registry.get_tool(tool_name)
-            if selected_tool:
-                try:
-                    result = global_sandbox.run_sandboxed(
-                        func=selected_tool.invoke,
-                        args={"input": tool_args},
-                        timeout=15.0,
-                    )
-                    tool_output = str(result)
-                except SandboxExecutionError as s_err:
-                    tool_output = f"Sandbox Violation: {str(s_err)}"
-                except Exception as e:
-                    tool_output = f"Error executing {tool_name}: {str(e)}"
-            else:
-                tool_output = f"Tool {tool_name} not found in the registry"
-
-            tool_results.append(
-                {
-                    "tool": tool_name,
-                    "args": tool_args,
-                    "output": tool_output,
-                }
-            )
-
-            messages.append(
-                ToolMessage(content = tool_output, tool_call_id = tool_call_id)
-            )
-        return {"messages": messages, "tool_results": tool_results}
 
 def format_node(state: AgentState)-> Dict[str, Any]:
     """

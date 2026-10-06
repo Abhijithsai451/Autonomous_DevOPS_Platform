@@ -1,16 +1,17 @@
 import time
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from apps.agent_runtime.application.execution_service import AgentExecutionService
 from apps.agent_runtime.infrastructure.database import agent_runtime_db_client as db_client
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.infrastructure.telemetry import AgentObservability
 
-router = APIRouter(prefix = "agents", tags = ["execute"])
+router = APIRouter(prefix = "/agents", tags = ["execute"])
 
 @router.post("/execute")
-async def xecute_agent(payload: dict):
+async def execute_agent(payload: dict, db: Session = Depends(db_client.get_session)):
     """
     Direct REST endpoint trigger for agent execution (mirrors consumer execution).
     """
@@ -30,7 +31,7 @@ async def xecute_agent(payload: dict):
                                         workflow_instance_id=str(workflow_instance_id),
                                         agent_run_id=payload.get("agent_run_id"),
                                         ):
-        db_gen = db_client.get_db()
+        db_gen = db_client.get_session()
         db = next(db_gen)
         try:
             logger.info("Agent starting execution", extra_data={"agent_type": agent_type})

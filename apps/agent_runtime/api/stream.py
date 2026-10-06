@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from apps.agent_runtime.graphs.streaming import stream_agent_execution
 
-router = APIRouter(prefix ="agents", tags = ["streaming"])
+router = APIRouter(prefix ="/agents", tags = ["streaming"])
 
 @router.post("/{run_id}/stream")
 async def stream_agent_run(run_id: str, payload: dict):
