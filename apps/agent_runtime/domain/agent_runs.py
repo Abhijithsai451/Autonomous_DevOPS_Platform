@@ -24,12 +24,7 @@ class AgentRuns(Base):
     agent_id = Column(UUID(as_uuid=True), ForeignKey("agent_runtime.agents.id", ondelete="CASCADE"), nullable=False, index=True)
     task_id = Column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
     workflow_instance_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    status = Column(
-        Enum(RunStatus, name="run_status", schema="agent_runtime"),
-        default=RunStatus.PENDING,
-        nullable=False,
-        index=True
-    )
+    status = Column(Enum(RunStatus, name="run_status", schema="agent_runtime"),default=RunStatus.PENDING,nullable=False,index=True)
     input_data = Column(JSONB, default={}, nullable=False)
     output_data = Column(JSONB, nullable=True)
     error = Column(JSONB, nullable=True)
