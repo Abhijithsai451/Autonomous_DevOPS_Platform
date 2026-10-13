@@ -11,6 +11,7 @@ sqlalchemy[asyncio]
 
 # Database
 sqlalchemy
+pgvector
 redis
 redis-async
 psycopg-pool
