@@ -5,10 +5,10 @@ from typing import Dict, Any
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-from apps.agent_runtime.application.runtime.context import ExecutionContext
-from apps.agent_runtime.application.runtime.engine import AgentRuntimeEngine
-from apps.agent_runtime.application.runtime.loop import AgentExecutionLoop
-from apps.agent_runtime.application.runtime.mcp_client import ToolServiceMCPClient
+from apps.agent_runtime.application.engine.context import ExecutionContext
+from apps.agent_runtime.application.engine.engine import AgentRuntimeEngine
+from apps.agent_runtime.application.mcp.mcp_client import ToolServiceMCPClient
+from apps.agent_runtime.application.orchestration.loop import AgentExecutionLoop
 from apps.agent_runtime.llm.reasoner import Reasoner
 from apps.agent_runtime.domain.agent_contract import AgentResult, AgentExecutionStatus, AgentError
 from packages.messaging.nats.event_bus import EventBus
@@ -16,12 +16,7 @@ from packages.logging.structured_logs import struc_logger as logger
 
 
 class AgentRunWorker:
-    def __init__(
-            self,
-            db_session_factory,
-            event_bus: EventBus,
-            tool_service_url: str,
-            llm_model: str = "gpt-4o"):
+    def __init__(self,db_session_factory,event_bus: EventBus,tool_service_url: str,llm_model: str = "gpt-4o"):
         self.db_session_factory = db_session_factory
         self.event_bus = event_bus
         self.mcp_client = ToolServiceMCPClient(tool_service_url)

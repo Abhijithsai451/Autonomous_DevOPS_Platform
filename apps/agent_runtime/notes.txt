@@ -1,0 +1,26 @@
+1. The End-to-End Execution Flow
+Here is how an incoming task travels through your architecture:
+
+NATS Ingestion (AgentRunWorker)
+
+An event (agent.run.requested) carrying the task_id, agent_id, and input goal is published to NATS.
+
+Your AgentRunWorker (via EventBus and Subscriber) consumes the message.
+
+Transactional Engine Initialization (AgentRuntimeEngine)
+
+The worker opens a PostgreSQL session and instantiates the AgentRuntimeEngine.
+
+A new run record is created in the database, setting its state to RUNNING and preparing outbox tracking.
+
+Supervisor & Planner Activation
+
+The engine passes execution control to the root agent (typically the Planner Agent or Supervisor).
+
+The Planner evaluates the user goal and creates an execution strategy (either by invoking a structured plan generation or starting a dynamic ReAct loop).
+
+Execution & Delegation
+
+During the loop, if the agent needs to write code or run a test, it emits a CALL_TOOL (via MCP) or CALL_AGENT (delegating to a specialist like the Coding Agent).
+
+The runtime validates the decision, executes it securely, feeds the observation back, and repeats until the goal is achieved.

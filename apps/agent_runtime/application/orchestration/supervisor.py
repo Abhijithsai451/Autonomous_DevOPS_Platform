@@ -1,4 +1,3 @@
-import logging
 from typing import Dict, Any, List
 
 from apps.agent_runtime.domain.agent_contract import AgentResult, AgentExecutionStatus
@@ -9,12 +8,7 @@ from apps.agent_runtime.application.engine.engine import AgentRuntimeEngine
 
 
 class MultiAgentSupervisor:
-    def __init__(
-        self,
-        agent_registry: AgentRegistry,
-        db_session_factory,
-        mcp_client
-    ):
+    def __init__(self,agent_registry: AgentRegistry, db_session_factory, mcp_client ):
         self.registry = agent_registry
         self.db_session_factory = db_session_factory
         self.mcp_client = mcp_client
@@ -39,15 +33,15 @@ class MultiAgentSupervisor:
             logger.info(f"Assigned to specialist agent: {specialist.name} ({specialist.agent_id})")
 
             sub_context = ExecutionContext(
-                agent_id=specialist.agent_id,
-                task_id=parent_context.task_id,
-                workflow_instance_id=parent_context.workflow_instance_id,
-                input_data={
-                    "prompt": step.task_description,
-                    "parent_run_id": str(parent_context.run_id)
-                },
-                metadata={"step_number": step.step_number, "capability": step.required_capability}
-            )
+                                        agent_id=specialist.agent_id,
+                                        task_id=parent_context.task_id,
+                                        workflow_instance_id=parent_context.workflow_instance_id,
+                                        input_data={
+                                            "prompt": step.task_description,
+                                            "parent_run_id": str(parent_context.run_id)
+                                        },
+                                        metadata={"step_number": step.step_number, "capability": step.required_capability}
+                                    )
 
             with self.db_session_factory() as db:
                 engine = AgentRuntimeEngine(db)

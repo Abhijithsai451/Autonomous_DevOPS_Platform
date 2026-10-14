@@ -30,6 +30,7 @@ langgraph
 langchain_openai
 langchain-google-genai
 langgraph-checkpoint-postgres
+langgraph-checkpoint-redis
 fastmcp
 # Observability & Evaluation
 opentelemetry-api
