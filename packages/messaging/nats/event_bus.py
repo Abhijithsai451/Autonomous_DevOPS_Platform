@@ -59,7 +59,6 @@ class EventBus:
         )
         target_stream = stream or self.stream_name
 
-        # Auto-ensure target stream before creating subscription
         await self.client.ensure_stream(
             stream_name=target_stream,
             subjects=[f"{full_subject.split('.')[0]}.>"]
