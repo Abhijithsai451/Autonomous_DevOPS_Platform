@@ -18,5 +18,4 @@ class LLMClient:
 
 
 
-llm_model = LLMClient(model_name = "gpt-4o-mini", api_key=agent_runtime_settings.OPENAI_API_KEY)
 
