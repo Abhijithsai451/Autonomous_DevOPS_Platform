@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 from apps.agent_runtime.infrastructure.outbox_publisher import agent_outbox_publisher
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.infrastructure.database import agent_db_session as db_client
-from apps.agent_runtime.workers.nats_consumer import task_event_handler
+from apps.agent_runtime.workers.task_consumer import task_event_handler
 from packages.redis.redis_client import redis_client
 from apps.agent_runtime.infrastructure.agent_runtime_nats_client import agent_nats_client as nats
 
