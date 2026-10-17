@@ -1,46 +1,25 @@
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Dict, Optional
-from uuid import UUID
+from typing import Any
 
-class AgentExecutionStatus(str, Enum):
-    PENDING = "PENDING"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    TIMEOUT = "TIMEOUT"
-    CANCELLED = "CANCELLED"
-
-@dataclass
-class AgentError:
-    code: str
-    message: str
-    details: Optional[Dict[str, Any]] = None
-    retryable: bool = False
-
-
-@dataclass
+@dataclass(frozen=True)
 class AgentContext:
-    run_id: UUID
-    agent_id: UUID
-    task_id: UUID
-    workflow_instance_id: UUID
-    input_data: Dict[str, Any]
-    configuration: Dict[str, Any]
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    task_id: str
+    workflow_instance_id: str | None
+    run_id: str
+    prompt: str
+    input_data: dict[str, Any] = field(default_factory=dict)
+    agent_configuration: dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentResult:
-    status: AgentExecutionStatus
-    output_data: Optional[Dict[str, Any]] = None
-    error: Optional[AgentError] = None
-    execution_duration_ms: float = 0.0
+    output_data: dict[str, Any]
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
-class BaseAgent:
-    """
-    Abstract contract for all execution units within the Agent Runtime.
-    """
-    def execute(self, context: AgentContext) -> AgentResult:
-        raise NotImplementedError("Agents must implement their own execute logic.")
+class AgentResolutionError(Exception):
+    """Raised when an agent cannot be resolved from its configuration."""
+
+
+class AgentSelectionError(Exception):
+    """Raised when no suitable active agent can be selected."""
