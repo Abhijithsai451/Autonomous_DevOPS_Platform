@@ -3,6 +3,7 @@ from typing import Any, Dict
 from apps.agent_runtime.agents.base_agent import BaseAgent
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.llm.llm_config import llm_model
+from apps.agent_runtime.llm.prompts.planner_prompt import planner_prompt
 
 
 class PlannerAgent(BaseAgent):
@@ -10,6 +11,7 @@ class PlannerAgent(BaseAgent):
         super().__init__(agent_name="system-planner", agent_type="planner")
         self.spec_docs = spec_docs
         self.model = llm_model
+        self.prompt = planner_prompt
     async def run(self, state: AgentContext)-> Dict[str, Any]:
         input = state["prompt"]
         response = self.model.run(input)
