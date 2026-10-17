@@ -8,13 +8,9 @@ import structlog
 def get_current_tracer(name: str = "cortexops-tracing") -> trace.Tracer:
     return trace.get_tracer(name)
 
-
 @contextmanager
-def start_agent_span(
-    name: str,
-    attributes: Optional[Dict[str, Any]] = None,
-    tracer_name: str = "cortexops-agent-runtime",
-) -> Generator[Span, None, None]:
+def start_agent_span( name: str,attributes: Optional[Dict[str, Any]] = None,
+    tracer_name: str = "cortexops-agent-runtime",) -> Generator[Span, None, None]:
     """
     Context manager to start an OpenTelemetry span, record exceptions gracefully,
     and automatically attach trace context to log statements.
