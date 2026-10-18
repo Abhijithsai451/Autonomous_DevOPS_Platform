@@ -64,7 +64,7 @@ class EventBus:
             subjects=[f"{full_subject.split('.')[0]}.>"]
         )
         await self.subscriber.subscribe(
-            stream=stream,
+            stream=target_stream,
             subject=full_subject,
             durable_name=durable_name,
             handler=handler

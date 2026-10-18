@@ -1,7 +1,7 @@
 import asyncio
 from typing import Dict, Any
 
-from cryptography.hazmat.backends.openssl.backend import Backend
+from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 
 from apps.agent_runtime.agents.backend_agent import BackendAgent
 from apps.agent_runtime.agents.base_agent import BaseAgent
@@ -30,4 +30,18 @@ class CodeOrchestratorAgent(BaseAgent):
             "code_artifacts": merged_artifacts,
             "status": "TEAM_CODING_COMPLETED",
         }
+
+    async def code_orchestrator_node(self, state: AgentContext) -> AgentContext:
+        logger.info("==> [Node: code_orchestrator] Executing coding agents team (Frontend, Backend, DevOps)...")
+        output = await self.code_orchestrator(state)
+        new_artifacts = output.get("code_artifacts", {})
+
+        logger.info(f"==> [Node: code_orchestrator] Generated files: {list(new_artifacts.keys())}")
+
+        # Direct in-place update of code_artifacts
+        current_artifacts = state.input_data.setdefault("code_artifacts", {})
+        current_artifacts.update(new_artifacts)
+        state.input_data["status"] = output.get("status", "CODING_COMPLETED")
+        return state
+
 

@@ -21,9 +21,6 @@ async def department_created_event_handler(payload: dict, metadata: dict):
 
 @asynccontextmanager
 async def agent_runtime_lifespan(app: FastAPI):
-    if not db_client.check_health():
-        raise RuntimeError("Workflow database health check failed on startup!")
-
     await redis_client.initialize()
 
     await nats.initialize()
@@ -33,11 +30,13 @@ async def agent_runtime_lifespan(app: FastAPI):
     outbox_task = asyncio.create_task(agent_outbox_publisher.start())
     logger.info("Outbox Publisher Worker started successfully.")
     durable_name = "workflow-events-task-ready"
+
     await nats.register_listener(subject = "Agent_runtime_initiated",
                                  durable_name= durable_name,
                                  handler = task_event_handler,
                                  stream = "workflow_events"
                                  )
+
     yield
 
     agent_outbox_publisher.stop()
