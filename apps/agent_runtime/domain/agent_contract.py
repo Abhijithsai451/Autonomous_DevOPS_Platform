@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-@dataclass(frozen=True)
+@dataclass()
 class AgentContext:
     task_id: str
     workflow_instance_id: str | None

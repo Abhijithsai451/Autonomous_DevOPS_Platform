@@ -13,4 +13,4 @@ def redis_connect(url)-> RedisMemoryCache:
     return redis_memory
 
 
-agent_redis_client = redis_connect(agent_runtime_settings.REDIS_HOST())
+agent_redis_client = redis_connect(agent_runtime_settings.REDIS_HOST)
