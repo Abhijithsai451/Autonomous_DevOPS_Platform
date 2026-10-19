@@ -21,19 +21,21 @@ class CodeOrchestratorAgent(BaseAgent):
         ]
 
     async def execute(self, state: AgentContext)-> Dict[str, Any]:
-        results = await asyncio.gather(*(agent.run(state) for agent in self.team))
+        results = await asyncio.gather(*(agent.execute(state) for agent in self.team))
+        """
         merged_artifacts = {}
         for res in results:
             merged_artifacts.update(res.get("code_artifacts", {}))
-
+        """
         return {
-            "code_artifacts": merged_artifacts,
+            "code_artifacts": "merged_artifacts",
             "status": "TEAM_CODING_COMPLETED",
         }
 
     async def code_orchestrator_node(self, state: AgentContext) -> AgentContext:
         logger.info("==> [Node: code_orchestrator] Executing coding agents team (Frontend, Backend, DevOps)...")
-        output = await self.code_orchestrator(state)
+        output = await self.execute(state)
+        """
         new_artifacts = output.get("code_artifacts", {})
 
         logger.info(f"==> [Node: code_orchestrator] Generated files: {list(new_artifacts.keys())}")
@@ -42,6 +44,7 @@ class CodeOrchestratorAgent(BaseAgent):
         current_artifacts = state.input_data.setdefault("code_artifacts", {})
         current_artifacts.update(new_artifacts)
         state.input_data["status"] = output.get("status", "CODING_COMPLETED")
+        """
         return state
 
 

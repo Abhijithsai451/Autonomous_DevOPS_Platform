@@ -7,5 +7,7 @@ class AgentRuntimeServiceSettings(BaseSettings):
     NATS_URL: str
     REDIS_HOST: str = Field(default="localhost")
     REDIS_PORT: int = Field(default=6379)
+    REDIS_URL: str
+    OPENAI_API_KEY: str
 
     model_config = SettingsConfigDict( extra="ignore")
