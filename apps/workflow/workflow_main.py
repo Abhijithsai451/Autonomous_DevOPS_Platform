@@ -6,7 +6,6 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm.exc import StaleDataError
 
 from apps.workflow.api.v1 import blueprint_api, instance_api, task_api, timeline_api
-from apps.workflow.application.idempotency_service import idempotent_listener
 from apps.workflow.infrastructure.database import workflow_db_client
 from apps.workflow.infrastructure.outbox_publisher import workflow_outbox_publisher
 from apps.workflow.infrastructure.structured_logs import struct_logger as logger

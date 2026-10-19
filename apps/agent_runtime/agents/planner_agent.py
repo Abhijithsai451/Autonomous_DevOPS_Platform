@@ -12,22 +12,25 @@ class PlannerAgent(BaseAgent):
         self.model = llm_model
         self.prompt = planner_prompt
     async def execute(self, state: AgentContext)-> Dict[str, Any]:
-        input = state["prompt"]
-        response = self.model.run(input)
-        state['prompt'] = response
+        input = state.prompt
+        #response = self.model.run(input)
+        logger.info("making an LLM Call")
+        state.prompt = "response"
 
         return state
 
     async def planner_node(self, state: AgentContext) -> AgentContext:
         logger.info(f"==> [Node: planner] Analyzing prompt: '{state.prompt}'")
-        output = await self.planner(state)
+        output = await self.execute(state)
 
         # Direct in-place mutation
+        """
         state.input_data["tasks"] = output.get("tasks", [
             "Generate backend REST API with healthz check",
             "Generate frontend client UI",
             "Generate Dockerfile and Kubernetes manifests",
         ])
+        """
         state.input_data["status"] = "PLANNING_COMPLETED"
         return state
 

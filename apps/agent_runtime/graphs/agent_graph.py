@@ -16,8 +16,8 @@ from apps.agent_runtime.llm.llm_config import LLMClient
 
 class AgentGraph:
     def __init__(self):
-        self.redi_client = agent_redis_client
-        self.checkpointer = RedisSaver(self.redi_client)
+        self.redis_client = agent_redis_client
+        self.checkpointer = RedisSaver(redis_client=self.redis_client.redis)
         self.llm = LLMClient(model_name = "gpt-4o-mini", api_key=settings.OPENAI_API_KEY)
 
         self.planner = PlannerAgent(self.llm)
@@ -30,10 +30,10 @@ class AgentGraph:
     def _build_graph(self):
         graph = StateGraph(AgentContext)
 
-        graph.add_node("planner", self.planner_node)
-        graph.add_node("code_orchestrator", self.code_orchestrator_node)
-        graph.add_node("reviewer", self.review_node)
-        graph.add_node("deployer", self.deploy_node)
+        graph.add_node("planner", self.planner.planner_node)
+        graph.add_node("code_orchestrator", self.code_orchestrator.code_orchestrator_node)
+        graph.add_node("reviewer", self.reviewer.review_node)
+        graph.add_node("deployer", self.deployer.deploy_node)
 
         graph.set_entry_point("planner")
         graph.add_edge("planner", "code_orchestrator")
@@ -41,7 +41,7 @@ class AgentGraph:
 
         graph.add_conditional_edges(
             "reviewer",
-            self._route_after_review,
+            self.reviewer._route_after_review,
             {
                 "deployer": "deployer",
                 "code_orchestrator": "code_orchestrator",

@@ -10,10 +10,12 @@ class DevopsAgent(BaseAgent):
         super().__init__(agent_name="code-devops-agent", agent_type="devops_agent")
         self.model = llm_model
         self.prompt = devops_prompt
-    async def execute(self, state: AgentContext)-> Dict[str, Any]:
-        input = state["prompt"]
-        response = self.model.run(input)
-        state['prompt'] = response
+
+    async def execute(self, state: AgentContext) -> Dict[str, Any]:
+        input = state.prompt
+        # response = self.model.run(input)
+        logger.info("making an LLM Call")
+        state.prompt = "response"
 
         return state
 

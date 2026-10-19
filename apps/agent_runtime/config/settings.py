@@ -22,6 +22,10 @@ class AgentRuntimeSettingsAdapter():
         return self._config.REDIS_PORT
 
     @property
+    def REDIS_URL(self):
+        return self._config.REDIS_URL
+
+    @property
     def OPENAI_API_KEY(self):
         return self._config.OPENAI_API_KEY
 

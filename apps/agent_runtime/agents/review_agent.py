@@ -10,16 +10,18 @@ class ReviewAgent(BaseAgent):
         super().__init__(agent_name="code-review-agent", agent_type="review_agent")
         self.model = llm_model
         self.prompt = review_prompt
-    async def execute(self, state: AgentContext)-> Dict[str, Any]:
-        input = state["prompt"]
-        response = self.model.run(input)
-        state['prompt'] = response
+
+    async def execute(self, state: AgentContext) -> Dict[str, Any]:
+        input = state.prompt
+        # response = self.model.run(input)
+        logger.info("making an LLM Call")
+        state.prompt = "response"
 
         return state
 
     async def review_node(self, state: AgentContext) -> AgentContext:
         logger.info("==> [Node: reviewer] Reviewing generated code artifacts...")
-        await self.reviewer(state)
+        await self.execute(state)
 
         artifacts = state.input_data.get("code_artifacts", {})
         iteration = state.input_data.get("review_iterations", 0) + 1
