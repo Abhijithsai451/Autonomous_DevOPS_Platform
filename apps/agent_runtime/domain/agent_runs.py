@@ -1,10 +1,8 @@
 import enum
 from datetime import datetime, timezone
 from uuid import uuid4
-
 from sqlalchemy import Column, UUID, ForeignKey, Enum,  DateTime, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
-
 from apps.agent_runtime.infrastructure.base import Base
 
 
