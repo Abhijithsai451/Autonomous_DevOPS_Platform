@@ -46,7 +46,7 @@ def create_instance(payload: CreateInstanceSchema, db: Session = Depends(workflo
 @router.get("", response_model = PaginatedInstanceResponse)
 def list_instances(
         limit: int = Query(20, description = "Items per page"),
-        offset: int = Query(0, descripiton = "Items to skip"),
+        offset: int = Query(0, description = "Items to skip"),
         instance_status: Optional[str]= Query(None, description="Filter by instance status"),
         blueprint_id: Optional[UUID] = Query(None, description="Filter by blueprint ID"),
         db: Session = Depends(workflow_db_session)):

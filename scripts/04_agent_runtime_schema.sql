@@ -100,6 +100,13 @@ CREATE TABLE  agent_runtime.checkpoint_writes (
     blob BYTEA NOT NULL,
     PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id, task_id, idx)
 );
+CREATE TABLE agent_runtime.rag_storage(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    filename VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    vector FLOAT4[] NOT NULL
+);
+
 -- ========================================================
 -- PERFORMANCE INDEXES
 -- ========================================================
