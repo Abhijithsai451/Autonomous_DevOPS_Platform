@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 from sqlalchemy.orm import Session
 
-from apps.agent_runtime.domain.rag_storage import RAGStorage
+from apps.agent_runtime.domain.rag_domain import RAGStorage
 
 class RAG:
     def __init__(self, db: Session, embedding_client: Any = None):
