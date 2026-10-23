@@ -29,4 +29,12 @@ class AgentRuntimeSettingsAdapter():
     def OPENAI_API_KEY(self):
         return self._config.OPENAI_API_KEY
 
+    @property
+    def OLLAMA_BASE_URL(self):
+        return self._config.OLLAMA_BASE_URL
+
+    @property
+    def LLM_MODEL(self):
+        return self._config.LLM_MODEL
+
 agent_runtime_settings = AgentRuntimeSettingsAdapter(_settings)

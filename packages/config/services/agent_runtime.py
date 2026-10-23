@@ -9,5 +9,7 @@ class AgentRuntimeServiceSettings(BaseSettings):
     REDIS_PORT: int = Field(default=6379)
     REDIS_URL: str
     OPENAI_API_KEY: str
+    OLLAMA_BASE_URL: str
+    LLM_MODEL: str
 
     model_config = SettingsConfigDict( extra="ignore")

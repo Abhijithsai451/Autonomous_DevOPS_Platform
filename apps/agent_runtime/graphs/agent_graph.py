@@ -8,7 +8,7 @@ from apps.agent_runtime.agents.code_orchestrator import CodeOrchestratorAgent
 from apps.agent_runtime.agents.deploy_agent import DeployAgent
 from apps.agent_runtime.agents.planner_agent import PlannerAgent
 from apps.agent_runtime.agents.review_agent import ReviewAgent
-from apps.agent_runtime.config.settings import agent_runtime_settings as settings
+from apps.agent_runtime.agents.task_orchestrator import TaskOrchestrator
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.infrastructure.redis_client import agent_redis_client
 from apps.agent_runtime.llm.llm_config import LLMClient
@@ -18,8 +18,10 @@ class AgentGraph:
     def __init__(self):
         self.redis_client = agent_redis_client
         self.checkpointer = RedisSaver(redis_client=self.redis_client.redis)
-        self.llm = LLMClient(model_name = "gpt-4o-mini", api_key=settings.OPENAI_API_KEY)
+        self.llm = LLMClient()
 
+        #Agents
+        self.task_orchestrator = TaskOrchestrator(self.llm)
         self.planner = PlannerAgent(self.llm)
         self.code_orchestrator = CodeOrchestratorAgent(self.llm)
         self.reviewer = ReviewAgent(self.llm)
@@ -29,13 +31,16 @@ class AgentGraph:
 
     def _build_graph(self):
         graph = StateGraph(AgentContext)
-
+        #Nodes
+        graph.add_node("task_orchestrator", self.task_orchestrator)
         graph.add_node("planner", self.planner.planner_node)
         graph.add_node("code_orchestrator", self.code_orchestrator.code_orchestrator_node)
         graph.add_node("reviewer", self.reviewer.review_node)
         graph.add_node("deployer", self.deployer.deploy_node)
 
-        graph.set_entry_point("planner")
+        #Edges
+        graph.set_entry_point("task_orchestrator")
+        graph.add_edge("task_orchestrator","planner")
         graph.add_edge("planner", "code_orchestrator")
         graph.add_edge("code_orchestrator", "reviewer")
 
