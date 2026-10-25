@@ -16,7 +16,7 @@ from apps.agent_runtime.infrastructure.outbox_publisher import agent_outbox_publ
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.repository.rag_repository import KBRepository
 from packages.redis.redis_client import redis_client
-
+from apps.agent_runtime.config.settings import agent_runtime_settings as settings
 
 async def run_end_to_end_graph(prompt: str) -> AgentContext:
     """Executes the agent runtime graph end-to-end mutating AgentContext in place."""
@@ -24,7 +24,11 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
     workflow_instance_id = str(uuid.uuid4())
     run_id = str(uuid.uuid4())
     # Ingest the knowledge base to the DB
-    docs = KBRepository.ingest_document()
+    with next(db_client.get_session()) as session:
+        kb_repo = KBRepository(db= session)
+        print("Running automated knowledge base sync")
+        ingested = await kb_repo.ingest_kb(settings.KNOWLEDGE_BASE_PATH)
+        print(f"✅ [KB Pipeline] Ingested/Updated {len(ingested)} documents.")
 
     print("\n" + "=" * 65)
     print("🚀 [Agent Runtime] Starting End-to-End Execution with AgentContext")

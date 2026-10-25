@@ -37,4 +37,12 @@ class AgentRuntimeSettingsAdapter():
     def LLM_MODEL(self):
         return self._config.LLM_MODEL
 
+    @property
+    def KNOWLEDGE_BASE_PATH(self):
+        return self._config.KNOWLEDGE_BASE_PATH
+
+    @property
+    def EMBEDDING_MODEL(self):
+        return self._config.EMBEDDING_MODEL
+
 agent_runtime_settings = AgentRuntimeSettingsAdapter(_settings)

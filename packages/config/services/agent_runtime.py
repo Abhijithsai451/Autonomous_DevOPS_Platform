@@ -11,5 +11,7 @@ class AgentRuntimeServiceSettings(BaseSettings):
     OPENAI_API_KEY: str
     OLLAMA_BASE_URL: str
     LLM_MODEL: str
+    KNOWLEDGE_BASE_PATH: str
+    EMBEDDING_MODEL: str
 
     model_config = SettingsConfigDict( extra="ignore")

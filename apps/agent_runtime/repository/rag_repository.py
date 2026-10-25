@@ -7,6 +7,8 @@ from openai import AsyncOpenAI
 from sqlalchemy import text, desc
 from sqlalchemy.orm import Session
 from apps.agent_runtime.domain.rag_domain import KBDocuments, KBChunks
+from apps.agent_runtime.config.settings import agent_runtime_settings as settings
+
 
 
 class KBRepository:
@@ -16,34 +18,21 @@ class KBRepository:
             self.embedding_client = embedding_client
         else:
             try:
-                from openai import AsyncOpenAI
-                self.embedding_client = AsyncOpenAI()
+                self.embedding_client = AsyncOpenAI(
+                    base_url=settings.OLLAMA_BASE_URL,
+                    api_key=settings.OPENAI_API_KEY,
+                )
             except ImportError:
                 self.embedding_client = None
 
+
     async def get_embedding(self, text_content: str) -> List[float]:
         """Generate embedding vector using the configured client."""
-        if self.embedding_client is None:
-            raise RuntimeError( "Embedding Client is not configured. Install 'openai' ")
-
-        if hasattr(self.embedding_client, "embeddings") and hasattr(self.embedding_client.embeddings, "create"):
-            response = await self.embedding_client.embeddings.create(
-                model="text-embedding-3-small",
-                input=text_content,
-            )
-            return response.data[0].embedding
-        elif hasattr(self.embedding_client, "create"):
-            res = await self.embedding_client.create(
-                model="text-embedding-3-small",
-                input=text_content,
-            )
-            return res.data[0].embedding
-        elif hasattr(self.embedding_client, "aembed_query"):
-            return await self.embedding_client.aembed_query(text_content)
-
-        raise NotImplementedError(
-            "Embedding client must support 'embeddings.create', 'create', or 'aembed_query'."
+        response = await self.embedding_client.embeddings.create(
+            model = settings.EMBEDDING_MODEL,
+            input = text_content
         )
+        return response.data[0].embedding
 
     @staticmethod
     def _split_into_chunks(content: str, max_chunk_chars: int = 1500) -> List[str]:
@@ -80,17 +69,13 @@ class KBRepository:
 
     async def ingest_kb(self, path: str)-> List[KBDocuments]:
         """
-        Scans the provided folder path for the files - detects modified/new files.
+        Single entry point for KB ingestion.
+        Accepts the directory path string, scans files, manages versioning via SHA-256,
+        computes vector embeddings, and stores them in PostgreSQL.
         """
-        """
-                Single entry point for KB ingestion.
-                Accepts the directory path string, scans files, manages versioning via SHA-256,
-                computes vector embeddings, and stores them in PostgreSQL.
-                """
         directory = Path(path)
         if not directory.exists() or not directory.is_dir():
             raise ValueError(f"Specified path '{path}' does not exist or is not a directory.")
-
         files = sorted(
             [
                 f for f in directory.rglob("*")
@@ -110,16 +95,19 @@ class KBRepository:
             title = stem.replace("_", " ").replace("-", " ").title()
 
             content_sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
-
+            existing_doc = (
+                self.db.query(KBDocuments)
+                .filter(KBDocuments.content_sha256 == content_sha256)
+                .first()
+            )
+            if existing_doc:
+                continue
             latest_doc = (
                 self.db.query(KBDocuments)
                 .filter(KBDocuments.kb_id == kb_id)
                 .order_by(desc(KBDocuments.created_at))
                 .first()
             )
-
-            if latest_doc and latest_doc.content_sha256 == content_sha256:
-                continue
 
             if latest_doc and latest_doc.version:
                 next_version = self.update_version(latest_doc.version)
@@ -141,12 +129,7 @@ class KBRepository:
             for chunk_text in chunks:
                 vector_embedding = await self.get_embedding(chunk_text)
 
-                chunk = KBChunks(
-                    id=uuid.uuid4(),
-                    document_id=doc.id,
-                    content=chunk_text,
-                    embedding=vector_embedding,
-                )
+                chunk = KBChunks(id=uuid.uuid4(),document_id=doc.id,content=chunk_text,embedding=vector_embedding)
                 self.db.add(chunk)
 
             self.db.commit()
