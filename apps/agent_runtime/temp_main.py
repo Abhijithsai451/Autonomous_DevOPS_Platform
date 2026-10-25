@@ -14,6 +14,7 @@ from apps.agent_runtime.infrastructure.agent_runtime_nats_client import agent_na
 from apps.agent_runtime.infrastructure.database import agent_runtime_db_client as db_client
 from apps.agent_runtime.infrastructure.outbox_publisher import agent_outbox_publisher
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
+from apps.agent_runtime.repository.rag_repository import KBRepository
 from packages.redis.redis_client import redis_client
 
 
@@ -22,6 +23,8 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
     task_id = str(uuid.uuid4())
     workflow_instance_id = str(uuid.uuid4())
     run_id = str(uuid.uuid4())
+    # Ingest the knowledge base to the DB
+    docs = KBRepository.ingest_document()
 
     print("\n" + "=" * 65)
     print("🚀 [Agent Runtime] Starting End-to-End Execution with AgentContext")
