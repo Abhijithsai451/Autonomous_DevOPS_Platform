@@ -4,11 +4,13 @@ import uuid
 from pathlib import Path
 from typing import Any, List, Dict, Optional
 from openai import AsyncOpenAI
-from sqlalchemy import text, desc
+from sqlalchemy import text, desc, bindparam
 from sqlalchemy.orm import Session
 from apps.agent_runtime.domain.rag_domain import KBDocuments, KBChunks
 from apps.agent_runtime.config.settings import agent_runtime_settings as settings
 from apps.agent_runtime.infrastructure.database import agent_db_session
+from pgvector.sqlalchemy import Vector
+
 
 
 class KBRepository:
@@ -134,15 +136,15 @@ class KBRepository:
         query_vector = await self.get_embedding(query)
 
         sql = text("""
-                            SELECT chunk_id, kb_id, content, combined_score
-                            FROM agent_runtime.search_kb_hybrid(
-                                :query_embedding::vector,
-                                :query_text,
-                                :match_version,
-                                :match_limit,
-                                :match_domain
-                            );
-        """)
+                   SELECT chunk_id, kb_id, content, combined_score
+                   FROM agent_runtime.search_kb_hybrid(
+                           :query_embedding::vector,
+                           :query_text::text,
+                           :match_version::varchar,
+                           :match_limit::int,
+                           :match_domain::varchar
+                        );
+                   """)
 
         result = self.db.execute(
             sql,

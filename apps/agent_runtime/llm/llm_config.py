@@ -23,6 +23,7 @@ class LLMClient:
     async def aexecute(self, message: str, system_prompt: Optional[str] = None) -> str:
         """Asynchronous chat execution for non-blocking agent runs."""
         messages = []
+
         if system_prompt:
             messages.append(SystemMessage(content=system_prompt))
         messages.append(HumanMessage(content=message))
