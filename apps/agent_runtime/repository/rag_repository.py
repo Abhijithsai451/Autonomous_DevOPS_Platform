@@ -2,12 +2,14 @@ import hashlib
 import re
 import uuid
 from pathlib import Path
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 from openai import AsyncOpenAI
-from sqlalchemy import text, desc
+from sqlalchemy import text, desc, bindparam
 from sqlalchemy.orm import Session
 from apps.agent_runtime.domain.rag_domain import KBDocuments, KBChunks
 from apps.agent_runtime.config.settings import agent_runtime_settings as settings
+from apps.agent_runtime.infrastructure.database import agent_db_session
+from pgvector.sqlalchemy import Vector
 
 
 
@@ -89,39 +91,28 @@ class KBRepository:
             content = file_path.read_text(encoding="utf-8").strip()
             if not content:
                 continue
-
+            relative_path = file_path.relative_to(directory)
+            if len(relative_path.parts)>1:
+                domain = relative_path.parts[0]
+            else:
+                domain = "general"
             stem = file_path.stem
             kb_id = stem.split("-")[0] if "-" in stem else stem
             title = stem.replace("_", " ").replace("-", " ").title()
 
             content_sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
-            existing_doc = (
-                self.db.query(KBDocuments)
-                .filter(KBDocuments.content_sha256 == content_sha256)
-                .first()
-            )
+            existing_doc = (self.db.query(KBDocuments).filter(KBDocuments.content_sha256 == content_sha256).first())
             if existing_doc:
                 continue
-            latest_doc = (
-                self.db.query(KBDocuments)
-                .filter(KBDocuments.kb_id == kb_id)
-                .order_by(desc(KBDocuments.created_at))
-                .first()
-            )
+            latest_doc = (self.db.query(KBDocuments).filter(KBDocuments.kb_id == kb_id).order_by(desc(KBDocuments.created_at)).first())
 
             if latest_doc and latest_doc.version:
                 next_version = self.update_version(latest_doc.version)
             else:
                 next_version = "1.0.0"
 
-            doc = KBDocuments(
-                id=uuid.uuid4(),
-                kb_id=kb_id,
-                title=title,
-                version=next_version,
-                domain="specifications",
-                content_sha256=content_sha256,
-            )
+            doc = KBDocuments(id=uuid.uuid4(),kb_id=kb_id,title=title,version=next_version,domain=domain,
+                                content_sha256=content_sha256,)
             self.db.add(doc)
             self.db.flush()
 
@@ -140,19 +131,20 @@ class KBRepository:
 
 
     async def search_hybrid(self,query: str,version: str = "1.0.0",limit: int = 5,
-                            ) -> List[Dict[str, Any]]:
+                            domain: Optional[str]=None) -> List[Dict[str, Any]]:
         """Perform hybrid search (FTS + pgvector with RRF) via PostgreSQL stored function."""
         query_vector = await self.get_embedding(query)
 
         sql = text("""
-                            SELECT chunk_id, kb_id, content, combined_score
-                            FROM agent_runtime.search_kb_hybrid(
-                                :query_embedding::vector,
-                                :query_text,
-                                :match_version,
-                                :match_limit
-                            );
-        """)
+                   SELECT chunk_id, kb_id, content, combined_score
+                   FROM agent_runtime.search_kb_hybrid(
+                           :query_embedding::vector,
+                           :query_text::text,
+                           :match_version::varchar,
+                           :match_limit::int,
+                           :match_domain::varchar
+                        );
+                   """)
 
         result = self.db.execute(
             sql,
@@ -161,23 +153,24 @@ class KBRepository:
                 "query_text": query,
                 "match_version": version,
                 "match_limit": limit,
+                "match_domain": domain,
             },
         )
 
         rows = result.fetchall()
         return [
-            {
-                "chunk_id": row.chunk_id,
-                "kb_id": row.kb_id,
-                "content": row.content,
-                "score": float(row.combined_score),
-            }
+                        {
+                            "chunk_id": row.chunk_id,
+                            "kb_id": row.kb_id,
+                            "content": row.content,
+                            "score": float(row.combined_score),
+                        }
             for row in rows
         ]
 
-    async def retrieve_context(self, query: str, limit: int = 3) -> str:
+    async def retrieve_context(self, query: str, limit: int = 3,domain: Optional[str] = None) -> str:
         """Retrieve formatted specification context for prompt injection."""
-        hits = await self.search_hybrid(query=query, limit=limit)
+        hits = await self.search_hybrid(query=query, limit=limit,domain = domain)
         if not hits:
             return "No relevant specification context found."
 
@@ -186,3 +179,6 @@ class KBRepository:
             for hit in hits
         ]
         return "\n\n---\n\n".join(parts)
+
+
+rag_repo = KBRepository(agent_db_session)

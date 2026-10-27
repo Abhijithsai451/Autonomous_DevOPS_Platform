@@ -32,7 +32,7 @@ class AgentGraph:
     def _build_graph(self):
         graph = StateGraph(AgentContext)
         #Nodes
-        graph.add_node("task_orchestrator", self.task_orchestrator)
+        graph.add_node("task_orchestrator", self.task_orchestrator.task_orchestrator_node)
         graph.add_node("planner", self.planner.planner_node)
         graph.add_node("code_orchestrator", self.code_orchestrator.code_orchestrator_node)
         graph.add_node("reviewer", self.reviewer.review_node)
