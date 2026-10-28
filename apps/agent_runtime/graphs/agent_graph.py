@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph
 
 from apps.agent_runtime.agents.code_orchestrator import CodeOrchestratorAgent
 from apps.agent_runtime.agents.deploy_agent import DeployAgent
+from apps.agent_runtime.agents.gateway_agent import GatewayAgent
 from apps.agent_runtime.agents.planner_agent import PlannerAgent
 from apps.agent_runtime.agents.review_agent import ReviewAgent
 from apps.agent_runtime.agents.task_orchestrator import TaskOrchestrator
@@ -21,6 +22,7 @@ class AgentGraph:
         self.llm = LLMClient()
 
         #Agents
+        self.gateway = GatewayAgent(self.llm)
         self.task_orchestrator = TaskOrchestrator(self.llm)
         self.planner = PlannerAgent(self.llm)
         self.code_orchestrator = CodeOrchestratorAgent(self.llm)
@@ -32,6 +34,7 @@ class AgentGraph:
     def _build_graph(self):
         graph = StateGraph(AgentContext)
         #Nodes
+        graph.add_node("gateway_triage", self.gateway.gateway_node)
         graph.add_node("task_orchestrator", self.task_orchestrator.task_orchestrator_node)
         graph.add_node("planner", self.planner.planner_node)
         graph.add_node("code_orchestrator", self.code_orchestrator.code_orchestrator_node)
@@ -39,7 +42,16 @@ class AgentGraph:
         graph.add_node("deployer", self.deployer.deploy_node)
 
         #Edges
-        graph.set_entry_point("task_orchestrator")
+        graph.set_entry_point("gateway_triage")
+        graph.add_conditional_edges(
+            "gateway_triage",
+            self.gateway.route_after_gateway,
+            {
+                "task_orchestrator": "task_orchestrator",
+                "bug_fix_subgraph": "code_orchestrator",
+                "abort": END,
+            },
+        )
         graph.add_edge("task_orchestrator","planner")
         graph.add_edge("planner", "code_orchestrator")
         graph.add_edge("code_orchestrator", "reviewer")

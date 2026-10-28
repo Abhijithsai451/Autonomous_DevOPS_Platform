@@ -136,6 +136,6 @@ if __name__ == "__main__":
     sample_prompt = (
         sys.argv[1]
         if len(sys.argv) > 1
-        else "I want an xyz website with a healthcheck and deployment setup"
+        else "I want a fully functional website/Portfolio for a Photographer named \"JohnDoe\" with a healthcheck and deployment setup"
     )
     asyncio.run(run_end_to_end_graph(sample_prompt))

@@ -1,9 +1,8 @@
 from typing import Dict, Any
 from apps.agent_runtime.agents.base_agent import BaseAgent
-from apps.agent_runtime.infrastructure.database import agent_runtime_db_client
+from apps.agent_runtime.infrastructure.database import agent_runtime_db_client as db_client
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.domain.agent_contract import AgentContext
-from apps.agent_runtime.llm.prompts import task_orchestrator_prompt
 from apps.agent_runtime.llm.prompts.task_orchestrator_prompt import build_prompt
 from apps.agent_runtime.repository.rag_repository import KBRepository
 
@@ -22,10 +21,10 @@ class TaskOrchestrator(BaseAgent):
     async def task_orchestrator_node(self, state: AgentContext) -> AgentContext:
         logger.info(f"==> [Node: Task Orchestrator] Analyzing prompt: '{state.prompt}'")
         query = state.prompt
-        with next(agent_runtime_db_client.get_session()) as session:
-            repo = KBRepository(db=session)
-            context = await repo.retrieve_context(query, 3)
-            prompt = build_prompt(query, context)
-            output = await self.execute(prompt)
-            state.output = output
+        #with next(db_client.get_session()) as session:
+        #    repo = KBRepository(db=session)
+        #    context = await repo.retrieve_context(query, 3)
+        #    prompt = build_prompt(query, context)
+        #    output = await self.execute(prompt)
+        #    state.output = output
         return state

@@ -174,4 +174,4 @@ class KBRepository:
         return "\n\n---\n\n".join(parts)
 
 
-rag_repo = KBRepository(agent_db_session)
+rag_session = KBRepository(agent_db_session)
