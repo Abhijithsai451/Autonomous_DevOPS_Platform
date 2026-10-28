@@ -7,9 +7,8 @@ CREATE DATABASE agent_runtime;
 
 CREATE SCHEMA IF NOT EXISTS agent_runtime;
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-CREATE EXTENSION IF NOT EXISTS vector;
-
+CREATE EXTENSION IF NOT EXISTS vector SCHEMA agent_runtime;
+CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA agent_runtime;
 
 -- ========================================================
 -- ENUMS
@@ -117,7 +116,7 @@ CREATE TABLE agent_runtime.kb_chunks(
     document_id UUID REFERENCES agent_runtime.kb_documents(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     content_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
-    embedding vector(768)
+    embedding agent_runtime.vector(768)
 );
 
 -- ========================================================
