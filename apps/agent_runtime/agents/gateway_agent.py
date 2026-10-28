@@ -14,11 +14,12 @@ class GatewayAgent(BaseAgent):
         self.system_prompt = gateway_system_prompt
     async def execute(self, user_request)-> Dict[str, Any]:
         prompt = build_gateway_prompt(user_request)
+        logger.info("Agent Prompt Created and Invoking the LLM")
         response = await self.model.aexecute(
             message = prompt,
             system_prompt=self.system_prompt
         )
-        print(f"Response from the LLM: {response, None}")
+        logger.info(f"Response from the LLM: {response, None}")
         try:
             clean_json = response.strip().removeprefix("```json").removesuffix("```").strip()
             return json.loads(clean_json)
