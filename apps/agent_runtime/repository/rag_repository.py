@@ -4,12 +4,11 @@ import uuid
 from pathlib import Path
 from typing import Any, List, Dict, Optional
 from openai import AsyncOpenAI
-from sqlalchemy import text, desc, bindparam
+from sqlalchemy import text, desc, bindparam, type_coerce
 from sqlalchemy.orm import Session
 from apps.agent_runtime.domain.rag_domain import KBDocuments, KBChunks
 from apps.agent_runtime.config.settings import agent_runtime_settings as settings
 from apps.agent_runtime.infrastructure.database import agent_db_session
-from pgvector.sqlalchemy import Vector
 
 
 
@@ -134,39 +133,33 @@ class KBRepository:
                             domain: Optional[str]=None) -> List[Dict[str, Any]]:
         """Perform hybrid search (FTS + pgvector with RRF) via PostgreSQL stored function."""
         query_vector = await self.get_embedding(query)
-
-        sql = text("""
-                   SELECT chunk_id, kb_id, content, combined_score
-                   FROM agent_runtime.search_kb_hybrid(
-                           :query_embedding::vector,
-                           :query_text::text,
-                           :match_version::varchar,
-                           :match_limit::int,
-                           :match_domain::varchar
-                        );
-                   """)
-
-        result = self.db.execute(
-            sql,
-            {
-                "query_embedding": str(query_vector),
-                "query_text": query,
-                "match_version": version,
-                "match_limit": limit,
-                "match_domain": domain,
-            },
+        distance = KBChunks.embedding.cosine_distance(query_vector)
+        stmt = (
+            self.db.query(
+                KBChunks.id.label("chunk_id"),
+                KBDocuments.kb_id.label("kb_id"),
+                KBChunks.content.label("content"),
+                (1.0 - distance).label("score"),
+            )
+            .join(KBDocuments, KBChunks.document_id == KBDocuments.id)
+            .filter(KBDocuments.version == version)
         )
 
-        rows = result.fetchall()
+        if domain:
+            stmt = stmt.filter(KBDocuments.domain == domain)
+
+        rows = stmt.order_by(distance).limit(limit).all()
+
         return [
-                        {
-                            "chunk_id": row.chunk_id,
-                            "kb_id": row.kb_id,
-                            "content": row.content,
-                            "score": float(row.combined_score),
-                        }
+            {
+                "chunk_id": row.chunk_id,
+                "kb_id": row.kb_id,
+                "content": row.content,
+                "score": float(row.score) if row.score is not None else 0.0,
+            }
             for row in rows
         ]
+
 
     async def retrieve_context(self, query: str, limit: int = 3,domain: Optional[str] = None) -> str:
         """Retrieve formatted specification context for prompt injection."""
@@ -181,4 +174,4 @@ class KBRepository:
         return "\n\n---\n\n".join(parts)
 
 
-rag_repo = KBRepository(agent_db_session)
+rag_session = KBRepository(agent_db_session)

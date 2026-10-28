@@ -32,7 +32,7 @@ class KBChunks(Base):
                          nullable=False, )
     content = Column(Text, nullable=False)
     content_tsv = Column(TSVECTOR, server_default=text("to_tsvector('english', content)"), )
-    embedding = Column(Vector(1536), nullable=True, )
+    embedding = Column(Vector(768), nullable=True, )
     document = relationship("KBDocuments", back_populates="chunks")
 
 
