@@ -7,7 +7,7 @@ class AgentContext:
     workflow_instance_id: str | None
     run_id: str
     prompt: str
-    input_data: dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     agent_configuration: dict[str, Any] = field(default_factory=dict)
 
 

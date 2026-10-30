@@ -48,7 +48,7 @@ class TaskOrchestrator(BaseAgent):
 
     async def task_orchestrator_node(self, state: AgentContext) -> AgentContext:
         logger.info(f"==> [Node: Task Orchestrator] Analyzing prompt: '{state.prompt}'")
-        triage_data = state.input_data.get("summary")
+        triage_data = state.data.get("summary")
         if isinstance(triage_data, dict):
             query = triage_data.get("sanitized_summary") or state.prompt
         elif isinstance(triage_data, str) and triage_data:
@@ -57,8 +57,8 @@ class TaskOrchestrator(BaseAgent):
             query = state.prompt
         specification  = await self.execute(query)
 
-        state.input_data["task_specification"] = specification
-        state.input_data["status"] = "TASK_ORCHESTRATION_COMPLETED"
+        state.data["task_specification"] = specification
+        state.data["status"] = "TASK_ORCHESTRATION_COMPLETED"
         logger.info(f"==> [Node: Task Orchestrator] Specification created: '{specification.get('project_title')}'")
 
         return state

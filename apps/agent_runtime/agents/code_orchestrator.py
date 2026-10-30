@@ -35,16 +35,7 @@ class CodeOrchestratorAgent(BaseAgent):
     async def code_orchestrator_node(self, state: AgentContext) -> AgentContext:
         logger.info("==> [Node: code_orchestrator] Executing coding agents team (Frontend, Backend, DevOps)...")
         output = await self.execute(state)
-        """
-        new_artifacts = output.get("code_artifacts", {})
 
-        logger.info(f"==> [Node: code_orchestrator] Generated files: {list(new_artifacts.keys())}")
-
-        # Direct in-place update of code_artifacts
-        current_artifacts = state.input_data.setdefault("code_artifacts", {})
-        current_artifacts.update(new_artifacts)
-        state.input_data["status"] = output.get("status", "CODING_COMPLETED")
-        """
         return state
 
 
