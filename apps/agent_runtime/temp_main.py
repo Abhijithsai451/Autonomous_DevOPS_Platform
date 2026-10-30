@@ -43,7 +43,7 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
         workflow_instance_id=workflow_instance_id,
         run_id=run_id,
         prompt=prompt,
-        input_data={
+        data={
             "specifications": [
                 "Expose /healthz endpoint",
                 "Generate production Dockerfile and Kubernetes manifests",
@@ -64,18 +64,18 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
     print("⚡ [Graph Engine] Executing graph nodes...")
     final_result: AgentContext = await graph.ainvoke(initial_context, config=config)
     if isinstance(final_result, dict):
-        input_data = final_result.get("input_data", {})
+        data = final_result.get("input_data", {})
     else:
-        input_data = getattr(final_result, "input_data", {})
-    artifacts = input_data.get("code_artifacts", {})
+        data = getattr(final_result, "input_data", {})
+    artifacts = data.get("code_artifacts", {})
 
     print("\n" + "=" * 65)
     print("✅ [Agent Runtime] Execution Finished Successfully!")
-    print(f"   Final Status:    {input_data.get('status')}")
-    print(f"   Review Comments: {input_data.get('review_comments')}")
-    print(f"   GitHub Repo:     {input_data.get('github_repo_url')}")
-    print(f"   Deployment URL:  {input_data.get('deployment_url')}")
-    print(f"   Monitoring URL:  {input_data.get('monitoring_url')}")
+    print(f"   Final Status:    {data.get('status')}")
+    print(f"   Review Comments: {data.get('review_comments')}")
+    print(f"   GitHub Repo:     {data.get('github_repo_url')}")
+    print(f"   Deployment URL:  {data.get('deployment_url')}")
+    print(f"   Monitoring URL:  {data.get('monitoring_url')}")
     print(f"   Generated Files: {list(artifacts.keys())}")
     for file_name, code in artifacts.items():
         print(f"\n--- [Artifact: {file_name}] ---")

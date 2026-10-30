@@ -37,13 +37,13 @@ class GatewayAgent(BaseAgent):
         logger.info(f"==> [Node: Gateway and Triage Agent] Analyzing prompt: '{state.prompt}'")
         triage_result = await self.execute(state.prompt)
 
-        state.input_data["triage"] = triage_result
-        state.input_data["route"] = triage_result.get("route", "full_pipeline")
+        state.data["triage"] = triage_result
+        state.data["route"] = triage_result.get("route", "full_pipeline")
 
         return state
 
     def route_after_gateway(self, state: AgentContext)-> str:
-        route = state.input_data.get("route", "full_pipeline")
+        route = state.data.get("route", "full_pipeline")
 
         if route == "BUG_FIX":
             return "bug_fix_subgraph"

@@ -23,30 +23,30 @@ class ReviewAgent(BaseAgent):
         logger.info("==> [Node: reviewer] Reviewing generated code artifacts...")
         await self.execute(state)
 
-        artifacts = state.input_data.get("code_artifacts", {})
-        iteration = state.input_data.get("review_iterations", 0) + 1
+        artifacts = state.data.get("code_artifacts", {})
+        iteration = state.data.get("review_iterations", 0) + 1
 
         has_healthz = "/healthz" in artifacts.get("server/main.py", "")
         has_manifests = any("k8s" in path or "deploy" in path or "Dockerfile" in path for path in artifacts.keys())
         is_approved = has_healthz and has_manifests
 
-        comments = state.input_data.setdefault("review_comments", [])
+        comments = state.data.setdefault("review_comments", [])
         if is_approved:
             comments.append("Review approved: Specifications met.")
         else:
             comments.append("Review rejected: Missing healthz or deployment manifests.")
 
         # Direct in-place mutations
-        state.input_data["is_review_approved"] = is_approved
-        state.input_data["review_iterations"] = iteration
-        state.input_data["status"] = "APPROVED" if is_approved else "NEEDS_REVISION"
+        state.data["is_review_approved"] = is_approved
+        state.data["review_iterations"] = iteration
+        state.data["status"] = "APPROVED" if is_approved else "NEEDS_REVISION"
         return state
 
     def _route_after_review(self, state: AgentContext) -> str:
-        if state.input_data.get("is_review_approved", False):
+        if state.data.get("is_review_approved", False):
             logger.info("==> [Router] Code approved. Routing to deployer.")
             return "deployer"
-        if state.input_data.get("review_iterations", 0) >= 3:
+        if state.data.get("review_iterations", 0) >= 3:
             logger.warning("==> [Router] Max review iterations reached. Terminating.")
             return "failed"
         logger.info("==> [Router] Revision requested. Routing back to code_orchestrator.")
