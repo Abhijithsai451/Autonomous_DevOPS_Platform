@@ -20,7 +20,7 @@ class PlannerAgent(BaseAgent):
             message=prompt,
             system_prompt=self.system_prompt,
         )
-        print(response)
+        #print(response)
 
         try:
             clean_json = response.strip().removeprefix("```json").removesuffix("```").strip()
