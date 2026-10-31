@@ -19,57 +19,33 @@ class CodeOrchestratorAgent(BaseAgent):
             BackendAgent(llm_model),
             DevopsAgent(llm_model)
         ]
-        self.system_prompt = code_orchestrator_prompt.system_prompt
+        self.system_prompt = code_orchestrator_prompt.code_orch_system_prompt
 
     async def execute(self, state: AgentContext) -> Dict[str, Any]:
-        tasks: List[Dict[str, Any]] = state.data.get("tasks", [])
-        task_spec: Dict[str, Any] = state.data.get("task_specification", {})
 
-        # Deterministic filtering by layer:
-        backend_tasks = [t for t in tasks if t.get("layer") in ("BACKEND", "DATABASE")]
-        frontend_tasks = [t for t in tasks if t.get("layer") == "FRONTEND"]
-        devops_tasks = [t for t in tasks if t.get("layer") in ("DEVOPS", "INFRASTRUCTURE")]
-
-        dispatch_coros = []
-        if backend_tasks:
-            dispatch_coros.append(self.backend_agent.generate_code(backend_tasks, task_spec))
-        if frontend_tasks:
-            dispatch_coros.append(self.frontend_agent.generate_code(frontend_tasks, task_spec))
-        if devops_tasks:
-            dispatch_coros.append(self.devops_agent.generate_code(devops_tasks, task_spec))
-
-        # Run assigned agents concurrently
-        if not dispatch_coros:
-            logger.warning("Code Orchestrator: No tasks mapped to coding sub-agents.")
-            return {"code_artifacts": {}, "status": "NO_CODING_TASKS"}
-
-        results = await asyncio.gather(*dispatch_coros, return_exceptions=True)
-
-        merged_artifacts = {}
-        for res in results:
-            if isinstance(res, Exception):
-                logger.error(f"Coding sub-agent error: {res}")
-                continue
-            if isinstance(res, dict) and "artifacts" in res:
-                for item in res["artifacts"]:
-                    filepath = item.get("filepath")
-                    if filepath:
-                        merged_artifacts[filepath] = item.get("content", "")
-
-        return {
-            "code_artifacts": merged_artifacts,
-            "status": "CODING_COMPLETED",
-        }
+        return {}
 
     async def code_orchestrator_node(self, state: AgentContext) -> AgentContext:
         logger.info("==> [Node: Code Orchestrator] Delegating tasks to coding specialists...")
-        output = await self.execute(state)
+        tasks = state.data.get("tasks",[])
+        if not tasks:
+            logger.warning("==> [Node: Code Orchestrator] No tasks retrieved from the State")
+            state.data["code_orchestration_status"] = "FAILED"
+            return state
+        pending_tasks = [
+            t for t in tasks
+            if t.get("status") in [None, "PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
 
-        current_artifacts = state.data.setdefault("code_artifacts", {})
-        current_artifacts.update(output.get("code_artifacts", {}))
-        state.data["status"] = output.get("status", "CODING_COMPLETED")
+        if not pending_tasks:
+            logger.info("==> [Node: Code Orchestrator] All tasks are already completed and verified.")
+            state.data["code_orchestration_status"] = "COMPLETED"
+            return state
 
-        logger.info(f"==> [Node: Code Orchestrator] Generated {len(current_artifacts)} files across all specialists.")
+        logger.info(
+            f"==> [Node: Code Orchestrator] Found {len(pending_tasks)} pending/failed tasks to process.")
+
+        logger.info(f"==> [Node: Code Orchestrator] ")
         return state
 
 
