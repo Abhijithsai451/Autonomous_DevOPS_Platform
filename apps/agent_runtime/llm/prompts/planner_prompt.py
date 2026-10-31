@@ -23,6 +23,7 @@ You MUST respond strictly with a valid JSON object matching the following struct
       "title": "<Concise task title>",
       "description": "<Detailed implementation instructions>",
       "target_files": ["<filepath/module to create or edit>"],
+      "status":"PENDING"
       "depends_on": []
     },
     {
@@ -31,6 +32,7 @@ You MUST respond strictly with a valid JSON object matching the following struct
       "title": "<Concise task title>",
       "description": "<Detailed implementation instructions>",
       "target_files": ["<filepath/module>"],
+      "status":"PENDING"
       "depends_on": ["TASK-1"]
     }
   ],

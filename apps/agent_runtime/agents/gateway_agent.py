@@ -34,7 +34,7 @@ class GatewayAgent(BaseAgent):
             }
 
     async def gateway_node(self, state: AgentContext) -> AgentContext:
-        logger.info(f"==> [Node: Gateway and Triage Agent] Analyzing prompt: '{state.prompt}'")
+        logger.info(f"[Node: Gateway and Triage Agent] Analyzing prompt: '{state.prompt}'")
         triage_result = await self.execute(state.prompt)
 
         state.data["triage"] = triage_result
@@ -42,7 +42,7 @@ class GatewayAgent(BaseAgent):
 
         return state
 
-    def route_after_gateway(self, state: AgentContext)-> str:
+    def _route_after_gateway(self, state: AgentContext)-> str:
         route = state.data.get("route", "full_pipeline")
 
         if route == "BUG_FIX":
