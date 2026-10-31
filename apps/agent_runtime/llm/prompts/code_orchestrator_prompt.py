@@ -1,54 +1,67 @@
 import json
 from typing import List, Dict, Any
 
-code_orch_system_prompt = """You are a Principal Software Engineer specializing in {role}.
-Your objective is to implement production-grade, clean, maintainable code based strictly on assigned engineering tasks and specifications.
+code_orch_system_prompt = """
+You are the Senior Lead Code Orchestration Supervisor and Architectural Compliance Controller.
+Your role is to monitor the execution plan, supervise specialist coding agents across layers (DATABASE, BACKEND, FRONTEND, DEVOPS), audit generated artifacts against planned tasks, and verify QA functional completion flags[cite: 7].
 
-Standards:
-1. Complete, Functional Code: Never emit placeholders, `TODO`, or `...`. Provide complete file implementations.
-2. Architecture & Idioms: Adhere to strict typing, standard project design patterns, robust error handling, and clean separation of concerns.
-3. Target Files: Map each implementation precisely to the specified file path.
+Guidelines:
+1. Supervisory Audit: Cross-reference all generated code artifacts and file paths against the tasks defined in the engineering execution plan.
+2. Completeness Verification: Ensure no tasks are skipped, stubbed, or left with placeholder comments (`TODO`, `pass`, `...`).
+3. State & Status Assessment: Aggregate layer-specific execution results and evaluate whether the QA functional validation flag ("PASSED" / "FAILED") permits progression.
+4. Error Handling & Correction: If discrepancies or QA failures are detected, formulate precise corrective instructions for the next execution cycle.
 
 Output Format:
-You MUST respond STRICTLY with a valid JSON object matching:
-{{
-  "artifacts": [
-    {{
-      "filepath": "path/to/file.py",
-      "content": "<Complete source code>",
-      "action": "CREATE" | "MODIFY"
-    }}
+You MUST respond strictly with a valid JSON object matching the following structure:
+{
+  "orchestration_summary": "<Detailed technical summary of current code synthesis and verification status>",
+  "overall_status": "COMPLETED" | "IN_PROGRESS" | "FAILED",
+  "layer_status": {
+    "database": "PASSED" | "FAILED" | "PENDING",
+    "backend": "PASSED" | "FAILED" | "PENDING",
+    "frontend": "PASSED" | "FAILED" | "PENDING",
+    "devops": "PASSED" | "FAILED" | "PENDING"
+  },
+  "task_verification": [
+    {
+      "task_id": "<TASK-ID>",
+      "title": "<Task Title>",
+      "status": "VERIFIED" | "UNVERIFIED" | "FAILED",
+      "target_files_checked": ["<filepath>"],
+      "discrepancies": "<Description of any missing logic or empty string>"
+    }
   ],
-  "notes": "<Brief implementation notes or dependencies introduced>"
-}}
+  "qa_gate_status": "PASSED" | "FAILED",
+  "corrective_directives": "<Actionable instructions for workers/QA if status is FAILED, otherwise empty string>"
+}
 """
 
-
-BACKEND_SYSTEM_PROMPT = code_orch_system_prompt.format(role="Backend Systems, APIs, Database Models, and Business Logic")
-FRONTEND_SYSTEM_PROMPT = code_orch_system_prompt.format(role="Frontend UI, Component State Management, and Client API Integration")
-DEVOPS_SYSTEM_PROMPT = code_orch_system_prompt.format(role="DevOps, Docker, CI/CD, Infrastructure as Code, and Kubernetes Manifests")
-
-
-def build_specialist_prompt(role_name: str,
-                            assigned_tasks: List[Dict[str, Any]],
-                            task_spec: Dict[str, Any]) -> str:
-    """Builds the input prompt for an individual specialist coding agent."""
-    tasks_json = json.dumps(assigned_tasks, indent=2)
+def build_code_orchestrator_prompt(tasks: List[Dict[str, Any]], task_spec: Dict[str, Any], rag_context: str,
+                                   feedback: str = "") -> str:
+    tasks_json = json.dumps(tasks, indent=2)
     spec_summary = task_spec.get("executive_summary", "")
     constraints = json.dumps(task_spec.get("architectural_constraints", []), indent=2)
 
-    return f"""### ROLE: {role_name}
-            
-            ### PROJECT SPECIFICATION SUMMARY
-            {spec_summary}
-            
-            ### ARCHITECTURAL CONSTRAINTS
-            {constraints}
-            
-            ### ASSIGNED TASKS TO IMPLEMENT
-            \"\"\"json
-            {tasks_json}
-            \"\"\"
-            
-            Implement all assigned tasks and return the generated code artifacts according to the required JSON schema.
-            """
+    feedback_section = f"""
+    ###  PREVIOUS QA / TEST FEEDBACK (FIX THESE ISSUES)
+    \"\"\"
+    {feedback}
+    \"\"\"
+    """ if feedback else ""
+
+    return f"""### PROJECT SPECIFICATION SUMMARY
+    {spec_summary}
+
+    ### ARCHITECTURAL CONSTRAINTS & CONTEXT
+    {constraints}
+    {rag_context}
+
+    {feedback_section}
+
+    ### ASSIGNED TASKS TO IMPLEMENT
+    \"\"\"json
+    {tasks_json}
+    \"\"\"
+
+    Implement all assigned tasks and return the generated code artifacts according to the required JSON schema.
+    """
