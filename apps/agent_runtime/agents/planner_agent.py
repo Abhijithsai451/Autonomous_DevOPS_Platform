@@ -44,10 +44,10 @@ class PlannerAgent(BaseAgent):
             }
 
     async def planner_node(self, state: AgentContext) -> AgentContext:
-        logger.info(f"==> [Node: planner] Generating implementation plan")
+        logger.info(f"[Node: planner] Generating implementation plan")
         task_spec = state.data.get("task_specification")
         if not task_spec:
-            logger.warning("==> [Node: Planner] No task_specification found in input_data; falling back to state.prompt")
+            logger.warning("[Node: Planner] No task_specification found in input_data; falling back to state.prompt")
             task_spec = {
                 "project_title": "Ad-hoc Plan",
                 "executive_summary": state.prompt,
@@ -61,7 +61,7 @@ class PlannerAgent(BaseAgent):
         state.data["status"] = "PLANNING_COMPLETED"
 
         task_count = len(plan.get("tasks", []))
-        logger.info(f"==> [Node: Planner] Plan created with {task_count} tasks: '{plan.get('plan_title')}'")
+        logger.info(f"[Node: Planner] Plan created with {task_count} tasks: '{plan.get('plan_title')}'")
         return state
 
 
