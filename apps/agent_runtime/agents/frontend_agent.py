@@ -12,5 +12,8 @@ class FrontendAgent(BaseAgent):
     async def execute(self, state: AgentContext)-> Dict[str, Any]:
         return {}
 
-    def frontend_node(self, ctx:AgentContext):
-        pass
+    def frontend_node(self, state:AgentContext):
+        tasks = state.data.get("tasks", [])
+        frontend_tasks = tasks.layer.get("FRONTEND")
+        logger.info(f"[Node: Frontend Agent] Found {len(frontend_tasks)} frontend tasks to process.")
+        return state

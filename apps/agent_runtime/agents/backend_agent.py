@@ -13,5 +13,8 @@ class BackendAgent(BaseAgent):
     async def execute(self, state: AgentContext)-> Dict[str, Any]:
         return {}
 
-    def backend_node(self, ctx:AgentContext):
-        pass
+    def backend_node(self, state:AgentContext):
+        tasks = state.data.get("tasks", [])
+        backend_tasks = tasks.layer.get("BACKEND" or "DATABASE")
+        logger.info(f"[Node: Backend Agent] Found {len(backend_tasks)} Backend and Database tasks to process.")
+        return state

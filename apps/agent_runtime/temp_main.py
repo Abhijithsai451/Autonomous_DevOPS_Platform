@@ -23,7 +23,7 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
     task_id = str(uuid.uuid4())
     workflow_instance_id = str(uuid.uuid4())
     run_id = str(uuid.uuid4())
-    # Ingest the knowledge base to the DB
+
     with next(db_client.get_session()) as session:
         kb_repo = KBRepository(db= session)
         print("Running automated knowledge base sync")
@@ -31,7 +31,7 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
         print(f"✅ [KB Pipeline] Ingested/Updated {len(ingested)} documents.")
 
     print("\n" + "=" * 65)
-    print("🚀 [Agent Runtime] Starting End-to-End Execution with AgentContext")
+    print("[Agent Runtime] Starting End-to-End Execution with AgentContext")
     print(f"   Task ID:              {task_id}")
     print(f"   Workflow Instance ID: {workflow_instance_id}")
     print(f"   Run ID:               {run_id}")
@@ -61,7 +61,7 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
     graph = AgentGraph()
     config = {"configurable": {"thread_id": task_id}}
 
-    print("⚡ [Graph Engine] Executing graph nodes...")
+    print("[Graph Engine] Executing graph nodes...")
     final_result: AgentContext = await graph.ainvoke(initial_context, config=config)
     if isinstance(final_result, dict):
         data = final_result.get("input_data", {})
@@ -70,7 +70,7 @@ async def run_end_to_end_graph(prompt: str) -> AgentContext:
     artifacts = data.get("code_artifacts", {})
 
     print("\n" + "=" * 65)
-    print("✅ [Agent Runtime] Execution Finished Successfully!")
+    print("[Agent Runtime] Execution Finished Successfully!")
     print(f"   Final Status:    {data.get('status')}")
     print(f"   Review Comments: {data.get('review_comments')}")
     print(f"   GitHub Repo:     {data.get('github_repo_url')}")

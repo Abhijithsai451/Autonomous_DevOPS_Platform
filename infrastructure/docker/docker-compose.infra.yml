@@ -76,7 +76,7 @@ services:
       - shared_network
 
   cache:
-    image: redis:7.2-alpine
+    image: redis/redis-stack-server:latest
     container_name: infra_redis
     restart: always
     deploy:
@@ -91,7 +91,7 @@ services:
       - "6379:6379"
     volumes:
        - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes","--protected-mode","no"]
     networks:
       - shared_network
 
