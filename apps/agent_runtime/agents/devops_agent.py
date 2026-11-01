@@ -18,5 +18,8 @@ class DevopsAgent(BaseAgent):
 
         return state
 
-    def devops_node(self, ctx:AgentContext):
-        pass
+    def devops_node(self, state:AgentContext):
+        tasks = state.data.get("tasks", [])
+        devops_tasks = tasks.layer.get("DEVOPS")
+        logger.info(f"[Node: Devops Agent] Found {len(devops_tasks)} devops tasks to process.")
+        return state

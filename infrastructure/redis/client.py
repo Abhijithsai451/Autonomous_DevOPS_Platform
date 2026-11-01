@@ -1,9 +1,7 @@
 import json
 from typing import Any, Optional
 from uuid import UUID
-
-import redis
-
+import redis.asyncio as redis
 
 class RedisMemoryCache:
     def __init__(self, redis_url: str):

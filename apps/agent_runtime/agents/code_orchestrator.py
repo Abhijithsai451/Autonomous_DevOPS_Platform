@@ -1,12 +1,6 @@
-import asyncio
-from typing import Dict, Any, List
-
+from typing import Dict, Any
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
-
-from apps.agent_runtime.agents.backend_agent import BackendAgent
 from apps.agent_runtime.agents.base_agent import BaseAgent
-from apps.agent_runtime.agents.devops_agent import DevopsAgent
-from apps.agent_runtime.agents.frontend_agent import FrontendAgent
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.llm.prompts import code_orchestrator_prompt
 
@@ -26,22 +20,34 @@ class CodeOrchestratorAgent(BaseAgent):
             logger.warning("[Node: Code Orchestrator] No tasks retrieved from the State")
             state.data["code_orchestration_status"] = "FAILED"
             return state
+
         pending_tasks = [ t for t in tasks
-                          if t.get("status") in [None, "PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")]
+                          if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")]
 
         if not pending_tasks:
-            logger.info("==> [Node: Code Orchestrator] All tasks are already completed and verified.")
-            state.data["code_status"] = "VERIFIED"
+            logger.info("[Node: Code Orchestrator] All tasks are already completed and verified.")
+            state.data["code_orchestration_status"] = "VERIFIED"
             return state
 
-        logger.info(f"[Node: Code Orchestrator] Found {len(pending_tasks)} pending/failed tasks to process.")
+        layers_with_work = {str(t.get("layer", "")).upper() for t in pending_tasks}
+
+        state.data["layers_pending"] = list(layers_with_work)
+        state.data["code_orchestration_status"] = "PENDING"
         return state
 
-    def _route_after_code_orch(self, route)-> str:
-        if route == "PENDING":
-            return "pending"
-        elif route == "UNVERIFIED":
-            return "unverified"
-        elif route == "VERIFIED":
+    def _route_after_code_orch(self, state: AgentContext)-> str:
+        status = state.data.get("code_orchestration_status", "PENDING").upper()
+
+        if status == "VERIFIED":
             return "verified"
 
+        pending_layers = state.data.get("layers_pending", [])
+
+        if any("BACKEND" in l or "DATABASE" in l for l in pending_layers):
+            return "backend_agent"
+        elif any("FRONTEND" in l for l in pending_layers):
+            return "frontend_agent"
+        elif any("DEVOPS" in l or "INFRA" in l for l in pending_layers):
+            return "devops_agent"
+
+        return "verified"

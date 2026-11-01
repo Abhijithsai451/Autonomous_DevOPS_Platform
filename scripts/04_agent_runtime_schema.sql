@@ -44,6 +44,14 @@ CREATE TABLE agent_runtime.agent_runs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     duration_ms BIGINT
 );
+CREATE TABLE agent_runtime.agent_context(
+    task_id  VARCHAR(100) PRIMARY KEY NOT NULL,
+    workflow_instance_id VARCHAR(100) NOT NULL,
+    run_id VARCHAR(100) NOT NULL,
+    prompt VARCHAR(5000) NOT NULL,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    agent_configuration JSONB NOT NULL DEFAULT '{}'::jsonb
+);
 
 CREATE TABLE agent_runtime.outbox_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

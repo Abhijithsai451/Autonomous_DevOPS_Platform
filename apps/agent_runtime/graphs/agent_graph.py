@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 
-from langgraph.checkpoint.redis import RedisSaver
+from langgraph.checkpoint.redis.aio import AsyncRedisSaver
 from langgraph.constants import END
 from langgraph.graph import StateGraph
 
@@ -11,6 +11,7 @@ from apps.agent_runtime.agents.devops_agent import DevopsAgent
 from apps.agent_runtime.agents.frontend_agent import FrontendAgent
 from apps.agent_runtime.agents.gateway_agent import GatewayAgent
 from apps.agent_runtime.agents.planner_agent import PlannerAgent
+from apps.agent_runtime.agents.qa_agent import QAAgent
 from apps.agent_runtime.agents.review_agent import ReviewAgent
 from apps.agent_runtime.agents.task_orchestrator import TaskOrchestrator
 from apps.agent_runtime.domain.agent_contract import AgentContext
@@ -21,7 +22,7 @@ from apps.agent_runtime.llm.llm_config import LLMClient
 class AgentGraph:
     def __init__(self):
         self.redis_client = agent_redis_client
-        self.checkpointer = RedisSaver(redis_client=self.redis_client.redis)
+        self.checkpointer = AsyncRedisSaver(redis_client=self.redis_client.redis)
         self.llm = LLMClient()
 
         #Agents
@@ -33,6 +34,7 @@ class AgentGraph:
         self.backend = BackendAgent(self.llm)
         self.frontend = FrontendAgent(self.llm)
         self.devops = DevopsAgent(self.llm)
+        self.qa = QAAgent(self.llm)
 
         self.reviewer = ReviewAgent(self.llm)
         self.deployer = DeployAgent(self.llm)
@@ -50,6 +52,7 @@ class AgentGraph:
         graph.add_node("backend_agent",self.backend.backend_node)
         graph.add_node("frontend_agent", self.frontend.frontend_node)
         graph.add_node("devops_agent",self.devops.devops_node)
+        graph.add_node("qa_agent", self.qa.qa_node)
 
         graph.add_node("reviewer", self.reviewer.review_node)
         graph.add_node("deployer", self.deployer.deploy_node)
@@ -70,14 +73,16 @@ class AgentGraph:
         graph.add_conditional_edges("code_orchestrator",
                                     self.code_orchestrator._route_after_code_orch,
                                     path_map={
-                                        "pending":"backend_agent",
-                                        "unverified": END,
-                                        "verified": "reviewer"
+                                        "backend_agent": "backend_agent",
+                                        "frontend_agent": "frontend_agent",
+                                        "devops_agent": "devops_agent",
+                                        "verified": "reviewer",
                                     })
 
-        graph.add_edge("backend_agent","frontend_agent")
-        graph.add_edge("frontend_agent","devops_agent")
-        graph.add_edge("devops_agent","code_orchestrator")
+        graph.add_edge("backend_agent","qa_agent")
+        graph.add_edge("frontend_agent","qa_agent")
+        graph.add_edge("devops_agent","qa_agent")
+        graph.add_edge("qa_agent", "code_orchestrator")
 
         graph.add_conditional_edges(
             "reviewer",
@@ -90,7 +95,7 @@ class AgentGraph:
         )
         graph.add_edge("deployer", END)
 
-        return graph.compile()
+        return graph.compile(checkpointer=self.checkpointer)
 
     async def ainvoke(self, initial_state: AgentContext, config: Optional[Dict[str, Any]] = None) -> AgentContext:
         return await self.workflow.ainvoke(initial_state, config=config)
