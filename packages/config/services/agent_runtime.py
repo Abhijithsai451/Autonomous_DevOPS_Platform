@@ -13,5 +13,6 @@ class AgentRuntimeServiceSettings(BaseSettings):
     LLM_MODEL: str
     KNOWLEDGE_BASE_PATH: str
     EMBEDDING_MODEL: str
+    SANDBOX_DIR: str
 
     model_config = SettingsConfigDict( extra="ignore")
