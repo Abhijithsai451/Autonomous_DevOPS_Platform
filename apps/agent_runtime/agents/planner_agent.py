@@ -6,7 +6,6 @@ from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.llm.prompts.planner_prompt import build_planner_prompt, planner_system_prompt
 
-
 class PlannerAgent(BaseAgent):
     def __init__(self,llm_model):
         super().__init__(agent_name="system-planner", agent_type="planner")
@@ -37,7 +36,6 @@ class PlannerAgent(BaseAgent):
                         "title": "Implement core requirement",
                         "description": str(task_spec.get("in_scope", ["Implement user request"])),
                         "target_files": [],
-                        "depends_on": [],
                     }
                 ],
                 "testing_strategy": "Implement unit and integration tests.",

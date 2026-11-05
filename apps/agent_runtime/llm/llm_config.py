@@ -1,13 +1,9 @@
-import os
 from typing import Optional
-
-from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from apps.agent_runtime.config.settings import agent_runtime_settings as settings
 
-load_dotenv()
 class LLMClient:
     def __init__(self,model_name: Optional[str] = None,base_url: Optional[str] = None,api_key: Optional[str] = None,
                  temperature: float = 0.2, ):

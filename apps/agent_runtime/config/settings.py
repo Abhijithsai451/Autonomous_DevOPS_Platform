@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from packages.config.services.agent_runtime import AgentRuntimeServiceSettings
 
 _settings = AgentRuntimeServiceSettings()
@@ -44,5 +46,10 @@ class AgentRuntimeSettingsAdapter():
     @property
     def EMBEDDING_MODEL(self):
         return self._config.EMBEDDING_MODEL
+
+    @property
+    def SANDBOX_DIR(self):
+        dir =  self._config.SANDBOX_DIR
+        return Path(dir)
 
 agent_runtime_settings = AgentRuntimeSettingsAdapter(_settings)

@@ -7,6 +7,20 @@ from typing_extensions import Any
 
 from packages.logging.redaction.redactor import redact_sensitive_middleware
 
+class StreamFilter:
+    """Wraps a stream (stdout/stderr) to drop lines containing specific target strings."""
+    def __init__(self, original_stream):
+        self.original_stream = original_stream
+
+    def write(self, message):
+        # Filter out noisy HTTP client trace logs
+        if "HTTP Request: POST" in message:
+            return
+        self.original_stream.write(message)
+        self.original_stream.flush()
+
+    def flush(self):
+        self.original_stream.flush()
 
 class StructuredLogger:
     """
@@ -18,6 +32,12 @@ class StructuredLogger:
         self.level = level.upper()
         self.initial_context = initial_context or {}
         self._log_level = getattr(logging, self.level, logging.INFO)
+
+        if not isinstance(sys.stdout, StreamFilter):
+            sys.stdout = StreamFilter(sys.stdout)
+        if not isinstance(sys.stderr, StreamFilter):
+            sys.stderr = StreamFilter(sys.stderr)
+
         self._bootstrap_system_logging()
         self._configure_structlog_pipeline()
         self._logger = self.get_logger()
