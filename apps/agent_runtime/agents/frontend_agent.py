@@ -20,7 +20,7 @@ class FrontendAgent(BaseAgent):
         try:
             with next(db_client.get_session()) as session:
                 repo = KBRepository(db=session)
-                context = await repo.retrieve_context(task, 5)
+                context = await repo.retrieve_context(task, 3)
         except Exception as ex:
             logger.warning(f"Frontend Agent: Failed to retrieve RAG context: {ex}")
         prompt = builder_coder_prompt(context, task, target_files)
@@ -36,7 +36,7 @@ class FrontendAgent(BaseAgent):
         frontend_tasks = state.data.get("frontend_tasks", [])
         if not frontend_tasks:
             logger.warning("[Node: Frontend Agent] No Frontend tasks found in state.")
-            return state
+            return {"data": state.data}
 
         if "codebase" not in state.data:
             state.data["codebase"] = {}
@@ -65,4 +65,10 @@ class FrontendAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
-        return state
+        return {
+            "data": {
+                **state.data,
+                "frontend_tasks": frontend_tasks,
+                "codebase": state.data["codebase"]
+            }
+        }

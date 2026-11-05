@@ -21,7 +21,7 @@ class DevopsAgent(BaseAgent):
         try:
             with next(db_client.get_session()) as session:
                 repo = KBRepository(db=session)
-                context = await repo.retrieve_context(task, 5)
+                context = await repo.retrieve_context(task, 3)
         except Exception as ex:
             logger.warning(f"DevOps Agent: Failed to retrieve RAG context: {ex}")
         prompt = builder_coder_prompt(context, task, target_files)
@@ -37,7 +37,7 @@ class DevopsAgent(BaseAgent):
         devops_tasks = state.data.get("devops_tasks", [])
         if not devops_tasks:
             logger.warning("[Node: DevOps Agent] No DevOps tasks found in state.")
-            return state
+            return {"data": state.data}
 
         if "codebase" not in state.data:
             state.data["codebase"] = {}
@@ -65,4 +65,10 @@ class DevopsAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
-        return state
+        return {
+            "data": {
+                **state.data,
+                "devops_tasks": devops_tasks,
+                "codebase": state.data["codebase"]
+            }
+        }

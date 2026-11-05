@@ -53,21 +53,35 @@ class CodeOrchestratorAgent(BaseAgent):
 
         if data.get("code_orchestration_iterations",0)> max_iterations:
             logger.warning("[Node: Code Orchestrator] Max iterations reached. Breaking loop and routing to reviewer.")
-            return "reviewer"
+            return "verified"
 
         if status == "VERIFIED":
-            return "reviewer"
+            return "verified"
+
+        pending_backend = [
+            t for t in data.get("backend_tasks", [])
+            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
+        pending_frontend = [
+            t for t in data.get("frontend_tasks", [])
+            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
+        pending_devops = [
+            t for t in data.get("devops_tasks", [])
+            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
 
         routes = []
 
-        if data.get("backend_tasks"):
+        if pending_backend:
             routes.append(Send("backend_agent", state))
-        if data.get("frontend_tasks"):
+        if pending_frontend:
             routes.append(Send("frontend_agent", state))
-        if data.get("devops_tasks"):
+        if pending_devops:
             routes.append(Send("devops_agent", state))
 
         if not routes:
-            return "reviewer"
+            logger.info("[Node: Code Orchestrator] No pending tasks remain. Routing to review agent.")
+            return "verified"
 
         return routes

@@ -22,7 +22,7 @@ class BackendAgent(BaseAgent):
         try:
             with next(db_client.get_session()) as session:
                 repo = KBRepository(db=session)
-                context = await repo.retrieve_context(task, 5)
+                context = await repo.retrieve_context(task, 3)
         except Exception as ex:
             logger.warning(f"Backend Agent: Failed to retrieve RAG context: {ex}")
         prompt = builder_coder_prompt(context,task, target_files)
@@ -39,7 +39,7 @@ class BackendAgent(BaseAgent):
         backend_tasks = state.data.get("backend_tasks", [])
         if not backend_tasks:
             logger.warning("[Node: Backend Agent] No backend tasks found in state.")
-            return state
+            return {"data": state.data}
 
         if "codebase" not in state.data:
             state.data["codebase"] = {}
@@ -69,4 +69,10 @@ class BackendAgent(BaseAgent):
                 }
             task["status"] = "FINISHED"
 
-        return state
+        return {
+            "data": {
+                **state.data,
+                "backend_tasks": backend_tasks,
+                "codebase": state.data["codebase"]
+            }
+        }
