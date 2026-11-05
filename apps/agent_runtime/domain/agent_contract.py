@@ -1,10 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Annotated
 
 from sqlalchemy import String, Column, Text, JSON
 
 from apps.agent_runtime.infrastructure.base import Base
 
+def merge_dicts(old: dict, new: dict) -> dict:
+    """Custom reducer to safely merge dictionaries without overwriting disjoint keys."""
+    return {**(old or {}), **(new or {})}
 
 @dataclass()
 class AgentContext:
@@ -12,7 +15,7 @@ class AgentContext:
     workflow_instance_id: str | None
     run_id: str
     prompt: str
-    data: dict[str, Any] = field(default_factory=dict)
+    data: Annotated[dict[str, Any], merge_dicts] = field(default_factory=dict)
     agent_configuration: dict[str, Any] = field(default_factory=dict)
 
 
