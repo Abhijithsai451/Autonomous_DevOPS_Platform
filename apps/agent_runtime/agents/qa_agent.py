@@ -39,16 +39,14 @@ class QAAgent(BaseAgent):
     async def qa_node(self, state:AgentContext):
         logger.info("[Node: QA Agent] Starting QA sanity validation on implemented code...")
         data = state.data
-        tasks = ( state.data.get("backend_tasks", []) +
-                  state.data.get("frontend_tasks", []) +
-                  state.data.get("devops_tasks", []))
+        tasks = state.data.get("tasks", [])
 
         codebase = state.data.get("codebase", {})
         if not codebase:
             logger.warning("[Node: QA Agent] No codebase files found in state to review.")
             return {"data": data}
 
-        if "qa_reports" not in state.data:
+        if "qa_reports" not in data:
             data["qa_reports"] = {}
         all_passed = True
 

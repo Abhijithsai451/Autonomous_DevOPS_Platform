@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Dict, Any
 from apps.agent_runtime.agents.base_agent import BaseAgent
 from apps.agent_runtime.domain.agent_contract import AgentContext
@@ -36,6 +35,7 @@ class BackendAgent(BaseAgent):
     async def backend_node(self, state:AgentContext):
         logger.info("[Node: Backend Agent] Starting backend task implementation...")
 
+        tasks = state.data.get("tasks", [])
         backend_tasks = state.data.get("backend_tasks", [])
         if not backend_tasks:
             logger.warning("[Node: Backend Agent] No backend tasks found in state.")
@@ -68,10 +68,13 @@ class BackendAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
-
+        for t in tasks:
+            if t.get("task_id") == task_id:
+                t["status"] = "FINISHED"
         return {
             "data": {
                 **state.data,
+                "tasks": tasks,
                 "backend_tasks": backend_tasks,
                 "codebase": state.data["codebase"]
             }

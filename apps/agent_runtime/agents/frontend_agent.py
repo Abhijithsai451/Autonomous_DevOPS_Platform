@@ -32,7 +32,7 @@ class FrontendAgent(BaseAgent):
 
     async def frontend_node(self, state:AgentContext):
         logger.info("[Node: Frontend Agent] Starting frontend task implementation...")
-
+        tasks = state.data.get("tasks", [])
         frontend_tasks = state.data.get("frontend_tasks", [])
         if not frontend_tasks:
             logger.warning("[Node: Frontend Agent] No Frontend tasks found in state.")
@@ -65,9 +65,13 @@ class FrontendAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
+        for t in tasks:
+            if t.get("task_id") == task_id:
+                t["status"] = "FINISHED"
         return {
             "data": {
                 **state.data,
+                "tasks": tasks,
                 "frontend_tasks": frontend_tasks,
                 "codebase": state.data["codebase"]
             }
