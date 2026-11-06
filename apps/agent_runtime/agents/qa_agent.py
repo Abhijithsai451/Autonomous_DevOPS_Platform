@@ -39,21 +39,19 @@ class QAAgent(BaseAgent):
     async def qa_node(self, state:AgentContext):
         logger.info("[Node: QA Agent] Starting QA sanity validation on implemented code...")
         data = state.data
-        tasks = ( state.data.get("backend_tasks", []) +
-                  state.data.get("frontend_tasks", []) +
-                  state.data.get("devops_tasks", []))
+        tasks = state.data.get("tasks", [])
 
         codebase = state.data.get("codebase", {})
         if not codebase:
             logger.warning("[Node: QA Agent] No codebase files found in state to review.")
             return {"data": data}
 
-        if "qa_reports" not in state.data:
+        if "qa_reports" not in data:
             data["qa_reports"] = {}
         all_passed = True
 
         for task in tasks:
-            if task.get("status") == "FINISHED":
+            if task.get("status") == "VERIFIED":
                 continue
 
             task_id = task.get("task_id")
@@ -65,8 +63,8 @@ class QAAgent(BaseAgent):
             data["qa_reports"][task_id] = response
 
             if "STATUS: PASS" in response.upper():
-                task["status"] = "FINISHED"
-                task["qa_status"] = "PASSED"
+                task["status"] = "VERIFIED"
+                task["qa_status"] = "VERIFIED"
             else:
                 task["status"] = "FAILED"
                 task["qa_status"] = "FAILED"

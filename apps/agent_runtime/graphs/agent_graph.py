@@ -80,6 +80,7 @@ class AgentGraph:
         graph.add_edge("backend_agent","qa_agent")
         graph.add_edge("frontend_agent","qa_agent")
         graph.add_edge("devops_agent","qa_agent")
+
         graph.add_edge("qa_agent", "code_orchestrator")
 
         graph.add_conditional_edges(

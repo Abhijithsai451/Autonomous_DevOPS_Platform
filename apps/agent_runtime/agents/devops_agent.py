@@ -33,7 +33,7 @@ class DevopsAgent(BaseAgent):
 
     async def devops_node(self, state:AgentContext):
         logger.info("[Node: DevOps Agent] Starting DevOps task implementation...")
-
+        tasks = state.data.get("tasks", [])
         devops_tasks = state.data.get("devops_tasks", [])
         if not devops_tasks:
             logger.warning("[Node: DevOps Agent] No DevOps tasks found in state.")
@@ -65,9 +65,13 @@ class DevopsAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
+        for t in tasks:
+            if t.get("task_id") == task_id:
+                t["status"] = "FINISHED"
         return {
             "data": {
                 **state.data,
+                "tasks": tasks,
                 "devops_tasks": devops_tasks,
                 "codebase": state.data["codebase"]
             }

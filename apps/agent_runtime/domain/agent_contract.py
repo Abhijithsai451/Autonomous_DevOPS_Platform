@@ -18,12 +18,10 @@ class AgentContext:
     data: Annotated[dict[str, Any], merge_dicts] = field(default_factory=dict)
     agent_configuration: dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass(frozen=True)
 class AgentResult:
     output_data: dict[str, Any]
     metadata: dict[str, Any] = field(default_factory=dict)
-
 
 class AgentResolutionError(Exception):
     """Raised when an agent cannot be resolved from its configuration."""
