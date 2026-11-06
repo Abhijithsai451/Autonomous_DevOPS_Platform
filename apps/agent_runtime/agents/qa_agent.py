@@ -51,7 +51,7 @@ class QAAgent(BaseAgent):
         all_passed = True
 
         for task in tasks:
-            if task.get("status") == "FINISHED":
+            if task.get("status") == "VERIFIED":
                 continue
 
             task_id = task.get("task_id")
@@ -63,8 +63,8 @@ class QAAgent(BaseAgent):
             data["qa_reports"][task_id] = response
 
             if "STATUS: PASS" in response.upper():
-                task["status"] = "FINISHED"
-                task["qa_status"] = "PASSED"
+                task["status"] = "VERIFIED"
+                task["qa_status"] = "VERIFIED"
             else:
                 task["status"] = "FAILED"
                 task["qa_status"] = "FAILED"
