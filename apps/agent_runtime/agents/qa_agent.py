@@ -51,7 +51,8 @@ class QAAgent(BaseAgent):
         all_passed = True
 
         for task in tasks:
-            if task.get("status") == "VERIFIED":
+            current_status = task.get("status")
+            if current_status in ["VERIFIED", "FINISHED", "PENDING", None]:
                 continue
 
             task_id = task.get("task_id")
