@@ -52,11 +52,13 @@ class QAAgent(BaseAgent):
 
         for task in tasks:
             current_status = task.get("status")
+            logger.info(f"Task status from the state.data.tasks is {current_status} ")
             if current_status in ["VERIFIED", "FINISHED", "PENDING", None]:
                 continue
 
             task_id = task.get("task_id")
             target_files = task.get("target_files", [])
+            print(f"target_files location is {str(target_files)}")
 
             logger.info(f"[Node: QA Agent] Performing sanity check on task {task_id} for files {target_files}...")
 
