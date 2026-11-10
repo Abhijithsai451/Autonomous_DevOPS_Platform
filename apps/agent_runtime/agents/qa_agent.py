@@ -12,7 +12,7 @@ class QAAgent(BaseAgent):
         super().__init__(agent_name="code-backend-agent", agent_type="backend_agent")
         self.model = llm_model
         self.system_prompt = code_orchestrator_prompt.qa_system_prompt
-    async def execute(self,  task, target_files, file_path)-> Dict[str, Any]:
+    async def execute(self, task)-> Dict[str, Any]:
         task_id = task.get("task_id")
         description = task.get("description")
         target_files = task.get("target_files", [])
@@ -52,8 +52,7 @@ class QAAgent(BaseAgent):
 
         for task in tasks:
             current_status = task.get("status")
-            logger.info(f"Task status from the state.data.tasks is {current_status} ")
-            if current_status in ["VERIFIED", "FINISHED", "PENDING", None]:
+            if current_status != "FINISHED":
                 continue
 
             task_id = task.get("task_id")
