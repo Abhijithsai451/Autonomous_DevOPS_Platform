@@ -62,17 +62,18 @@ class BackendAgent(BaseAgent):
                     full_path = sandbox_dir / file_path
                     full_path.parent.mkdir(parents=True, exist_ok=True)
                     full_path.write_text(response, encoding="utf-8")
-                    logger.info(f"[Node: Backend Agent] file successfully added to the path {str(full_path)}")
+                    logger.info(f"[Node: Backend Agent] File added to the path {str(full_path)}")
                 except FileExistsError as e:
                     pass
                 state.data["codebase"][file_path] = {
                     "absolute_path": str(full_path),
                     "task_id": task_id
                 }
+
             task["status"] = "FINISHED"
-        for t in tasks:
-            if t.get("task_id") == task_id:
-                t["status"] = "FINISHED"
+            for t in tasks:
+                if t.get("task_id") == task_id:
+                    t["status"] = "FINISHED"
         return {
             "data": {
                 **state.data,

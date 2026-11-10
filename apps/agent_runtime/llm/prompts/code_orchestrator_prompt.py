@@ -75,7 +75,7 @@ def builder_coder_prompt(task, kb_context,target_files):
     """
     return USER_PROMPT
 
-def build_qa_prompt(id, description, target_files) -> str:
+def build_qa_prompt(id, description, target_files, file_code) -> str:
     qa_user_prompt = f"""
     Please perform a code sanity review for the following task and its implemented files:
 
@@ -86,14 +86,17 @@ def build_qa_prompt(id, description, target_files) -> str:
     ### 2. Target Files to Review
     {target_files}
     
-    ### 3. Sanity Review Criteria
+    ### 3. File code to Review
+    {file_code}
+    
+    ### 4. Sanity Review Criteria
     Review the code strictly for:
     - **Syntax & Compilation**: Broken syntax, typos, or invalid imports.
     - **Completeness**: Placeholder comments (`TODO`, `pass`, `// implement here`) or missing method bodies.
     - **Error Handling**: Missing try/catch or critical error boundaries.
     - **Null & Boundary Safety**: Unhandled null/empty or boundary checks.
 
-    ### 4. Required Output Format
+    ### 5. Required Output Format
     Provide your analysis in the exact format below:
     - **STATUS**: [PASS / FAIL]
     - **FEEDBACK**: A concise explanation of any bugs or safety issues found (or "None" if clean).

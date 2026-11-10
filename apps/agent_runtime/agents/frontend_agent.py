@@ -60,7 +60,7 @@ class FrontendAgent(BaseAgent):
                     full_path = sandbox_dir / file_path
                     full_path.parent.mkdir(parents=True, exist_ok=True)
                     full_path.write_text(response, encoding="utf-8")
-                    logger.info(f"[Node: Backend Agent] file successfully added to the path {str(full_path)}")
+                    logger.info(f"[Node: Backend Agent] file  added to the path {str(full_path)}")
                 except FileExistsError as e:
                     pass
                 state.data["codebase"][file_path] = {

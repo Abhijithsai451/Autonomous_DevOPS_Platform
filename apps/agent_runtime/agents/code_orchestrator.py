@@ -31,17 +31,15 @@ class CodeOrchestratorAgent(BaseAgent):
         if not pending_tasks:
             logger.info("[Node: Code Orchestrator] All tasks are already completed and verified.")
             state.data["code_orchestration_status"] = "VERIFIED"
+            state.data["backend_tasks"] = []
+            state.data["frontend_tasks"] = []
+            state.data["devops_tasks"] = []
             return state
 
         # Group pending tasks by layer (Step 3 requirement)
-        backend_tasks = [t for t in pending_tasks if str(t.get("layer", "")).upper() in ["BACKEND", "DATABASE"]]
-        frontend_tasks = [t for t in pending_tasks if str(t.get("layer", "")).upper() == "FRONTEND"]
-        devops_tasks = [t for t in pending_tasks if str(t.get("layer", "")).upper() == "DEVOPS"]
-
-        # Store categorized tasks back into state data so lower agents can read them
-        state.data["backend_tasks"] = backend_tasks
-        state.data["frontend_tasks"] = frontend_tasks
-        state.data["devops_tasks"] = devops_tasks
+        state.data["backend_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() in ["BACKEND", "DATABASE"]]
+        state.data["frontend_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() == "FRONTEND"]
+        state.data["devops_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() == "DEVOPS"]
         state.data["code_orchestration_status"] = "PENDING"
 
         return state
@@ -58,18 +56,9 @@ class CodeOrchestratorAgent(BaseAgent):
         if status == "VERIFIED":
             return "verified"
 
-        pending_backend = [
-            t for t in data.get("backend_tasks", [])
-            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
-        ]
-        pending_frontend = [
-            t for t in data.get("frontend_tasks", [])
-            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
-        ]
-        pending_devops = [
-            t for t in data.get("devops_tasks", [])
-            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
-        ]
+        pending_backend = data.get("backend_tasks", [])
+        pending_frontend = data.get("frontend_tasks", [])
+        pending_devops = data.get("devops_tasks", [])
 
         routes = []
 
