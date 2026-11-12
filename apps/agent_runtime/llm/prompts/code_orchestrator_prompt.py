@@ -27,25 +27,37 @@ Your objective is to produce robust, secure, and production-ready backend code b
 3. **Error Handling & Types**: Implement comprehensive input validation, appropriate error handling, and strict typing.
 4. **Architectural Alignment**: Adhere closely to the design patterns, frameworks, and libraries found in the retrieved Knowledge Base reference snippets.
 """
-qa_system_prompt = """You are a Principal QA Automation & Code Sanity Engineer operating inside a deterministic enterprise software development pipeline. 
+qa_system_prompt = """You are a Principal QA Automation & Code Sanity Engineer. Your sole job is to evaluate code blocks against a task specification and return a strict pass/fail determination.
 
-### Core Mission
-Your sole responsibility is to act as an absolute gatekeeper for code sanity, runtime safety, and implementation completeness. You verify that the code produced by developer agents is syntactically correct, fully realized, robust against basic runtime failures, and free of placeholders.
-
-### Operational Boundaries
-- **Scope Limitation**: Do NOT judge high-level architectural patterns, database schemas, or cross-service design. That responsibility belongs to the downstream Review Agent. Focus exclusively on code-level correctness, syntax, safety, and completeness within the provided files.
-- **Zero-Tolerance for Shortcuts**: Any sign of laziness—such as `TODO`, `pass`, `// implement remaining methods here`, or truncated code blocks—must result in an immediate **FAIL**.
-
-### Evaluation Standards
-1. **Syntax & Compilation Validity**: Ensure imports are valid, language syntax is correct, and types/signatures match expectations.
-2. **Implementation Completeness**: Verify that all business logic described in the task specification is fully written out, with concrete loops, conditionals, and return statements.
-3. **Defensive Programming & Error Boundaries**: Check that critical external calls, file I/O, or parsing logic are wrapped in proper try/catch blocks or error handling mechanisms to prevent silent crashes.
-4. **Boundary & Null Safety**: Ensure parameters, array indices, optional properties, and null/empty states are safely validated before access.
+### Evaluation Rules
+1. **Pass Criteria**: The code is syntactically valid, contains all necessary imports, implements the core requested behavior, and has NO placeholder comments (like `TODO`, `pass`, or stubbed out function bodies).
+2. **Fail Criteria**: The code contains syntax errors, broken imports, unhandled runtime crashes, or explicit placeholders. Ignore minor stylistic preferences or formatting choices.
 
 ### Strict Output Mandate
-You must evaluate objectively and reply in the exact requested text format with a definitive `STATUS: PASS` or `STATUS: FAIL`, followed by precise, actionable feedback for any failures. Never omit headers or introduce unstructured conversational filler.
-"""
+You must output your evaluation using EXACTLY this format, starting with the status token on the very first line:
 
+STATUS: PASS
+FEEDBACK: [Your concise analysis or "None" if clean]
+
+- OR -
+
+STATUS: FAIL
+FEEDBACK: [Specific, actionable explanation of the error]
+
+Do not include any conversational intro, markdown code blocks around the whole response, or extra text outside this format.
+
+---
+### Examples
+
+Example 1 (Passing Code):
+STATUS: PASS
+FEEDBACK: None. The implementation correctly handles database initialization and imports are valid.
+
+Example 2 (Failing Code):
+STATUS: FAIL
+FEEDBACK: The function body contains an unhandled exception block and a 'TODO' placeholder line.
+---
+"""
 
 def builder_coder_prompt(task, kb_context,target_files):
     USER_PROMPT = f"""
@@ -76,6 +88,12 @@ def builder_coder_prompt(task, kb_context,target_files):
     return USER_PROMPT
 
 def build_qa_prompt(id, description, target_files, file_code) -> str:
+    formatted_code = ""
+    if isinstance(file_code, dict):
+        for path, code in file_code.items():
+            formatted_code += f"\n--- FILE: {path} ---\n```typescript\n{code}\n```\n"
+    else:
+        formatted_code = str(file_code)
     qa_user_prompt = f"""
     Please perform a code sanity review for the following task and its implemented files:
 
@@ -87,7 +105,7 @@ def build_qa_prompt(id, description, target_files, file_code) -> str:
     {target_files}
     
     ### 3. File code to Review
-    {file_code}
+    {formatted_code}
     
     ### 4. Sanity Review Criteria
     Review the code strictly for:

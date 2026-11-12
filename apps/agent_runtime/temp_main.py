@@ -17,13 +17,19 @@ from apps.agent_runtime.infrastructure.struct_logger import struct_logger as log
 from apps.agent_runtime.repository.rag_repository import KBRepository
 from packages.redis.redis_client import redis_client
 from apps.agent_runtime.config.settings import agent_runtime_settings as settings
+from packages.telemetry.provider import init_telemetry
+from openinference.instrumentation.langchain import LangChainInstrumentor
 
-async def run_end_to_end_graph(prompt: str) -> AgentContext:
+async def run_graph(prompt: str) -> AgentContext:
     """Executes the agent runtime graph end-to-end mutating AgentContext in place."""
     task_id = str(uuid.uuid4())
     workflow_instance_id = str(uuid.uuid4())
     run_id = str(uuid.uuid4())
-
+    telemetry_provider = init_telemetry(
+        service_name="agent-runtime",
+        environment="production"
+    )
+    LangChainInstrumentor().instrument()
     with next(db_client.get_session()) as session:
         kb_repo = KBRepository(db= session)
         print("Running automated knowledge base sync")
@@ -138,4 +144,4 @@ if __name__ == "__main__":
         if len(sys.argv) > 1
         else "I want a fully functional website/Portfolio for a Photographer named \"JohnDoe\" with a healthcheck and deployment setup"
     )
-    asyncio.run(run_end_to_end_graph(sample_prompt))
+    asyncio.run(run_graph(sample_prompt))

@@ -37,6 +37,7 @@ opentelemetry-api
 opentelemetry-sdk
 python-keycloak
 opentelemetry-exporter-otlp-proto-grpc
+openinference-instrumentation-langchain
 python-jose[cryptography]
 
 # Unit Testing

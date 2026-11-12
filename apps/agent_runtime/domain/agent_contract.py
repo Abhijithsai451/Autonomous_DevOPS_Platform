@@ -6,8 +6,14 @@ from sqlalchemy import String, Column, Text, JSON
 from apps.agent_runtime.infrastructure.base import Base
 
 def merge_dicts(old: dict, new: dict) -> dict:
-    """Custom reducer to safely merge dictionaries without overwriting disjoint keys."""
-    return {**(old or {}), **(new or {})}
+    """Recursively merge dictionaries to prevent parallel overwrites."""
+    result = dict(old or {})
+    for key, value in (new or {}).items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = merge_dicts(result[key], value)
+        else:
+            result[key] = value
+    return result
 
 @dataclass()
 class AgentContext:

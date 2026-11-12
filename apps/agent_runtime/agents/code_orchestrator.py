@@ -16,17 +16,18 @@ class CodeOrchestratorAgent(BaseAgent):
         return {}
 
     async def code_orchestrator_node(self, state: AgentContext) -> AgentContext:
-        logger.info("[Node: Code Orchestrator] Delegating tasks to coding specialists...")
+        logger.info("[Node: Code Orchestrator] Inspecting Task list to see any pending tasks...")
         tasks = state.data.get("tasks",[])
         if not tasks:
-            logger.warning("[Node: Code Orchestrator] No tasks retrieved from the State")
+            logger.info("[Node: Code Orchestrator] No tasks retrieved from the State")
             state.data["code_orchestration_status"] = "FAILED"
             return state
 
         pending_tasks = [
             t for t in tasks
-            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+            if t.get("status") in ["PENDING", "FAILED","UNVERIFIED"] or not t.get("status")
         ]
+        logger.info("[Node: Code Orchestrator] Delegating tasks to coding specialists...")
 
         if not pending_tasks:
             logger.info("[Node: Code Orchestrator] All tasks are already completed and verified.")
@@ -36,8 +37,7 @@ class CodeOrchestratorAgent(BaseAgent):
             state.data["devops_tasks"] = []
             return state
 
-        # Group pending tasks by layer (Step 3 requirement)
-        state.data["backend_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() in ["BACKEND", "DATABASE"]]
+        state.data["backend_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() in ["BACKEND", "DATABASE", "TEST"]]
         state.data["frontend_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() == "FRONTEND"]
         state.data["devops_tasks"] = [t for t in pending_tasks if str(t.get("layer", "")).upper() == "DEVOPS"]
         state.data["code_orchestration_status"] = "PENDING"
@@ -47,14 +47,15 @@ class CodeOrchestratorAgent(BaseAgent):
     def _route_after_code_orch(self, state: AgentContext)-> str:
         data = state.data
         status = data.get("code_orchestration_status")
+        tasks = data.get("tasks", [])
         max_iterations = 3
 
         if data.get("code_orchestration_iterations",0)> max_iterations:
             logger.warning("[Node: Code Orchestrator] Max iterations reached. Breaking loop and routing to reviewer.")
-            return "verified"
+            return "reviewer"
 
         if status == "VERIFIED":
-            return "verified"
+            return "reviewer"
 
         pending_backend = data.get("backend_tasks", [])
         pending_frontend = data.get("frontend_tasks", [])
@@ -71,6 +72,6 @@ class CodeOrchestratorAgent(BaseAgent):
 
         if not routes:
             logger.info("[Node: Code Orchestrator] No pending tasks remain. Routing to review agent.")
-            return "verified"
+            return "reviewer"
 
         return routes

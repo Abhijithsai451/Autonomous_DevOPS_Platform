@@ -33,7 +33,11 @@ class FrontendAgent(BaseAgent):
     async def frontend_node(self, state:AgentContext):
         logger.info("[Node: Frontend Agent] Starting frontend task implementation...")
         tasks = state.data.get("tasks", [])
-        frontend_tasks = state.data.get("frontend_tasks", [])
+        raw_tasks = state.data.get("frontend_tasks", [])
+        frontend_tasks = [
+            t for t in raw_tasks
+            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
         if not frontend_tasks:
             logger.warning("[Node: Frontend Agent] No Frontend tasks found in state.")
             return {"data": state.data}
@@ -44,14 +48,11 @@ class FrontendAgent(BaseAgent):
         sandbox_dir = settings.SANDBOX_DIR
         sandbox_dir.mkdir(parents=True, exist_ok=True)
         for task in frontend_tasks:
-            if task.get("status") == "FINISHED":
-                continue
-
             task_id = task.get("task_id")
             target_files = task.get("target_files")
             description = task.get("description", "")
 
-            logger.info(f"[Node: Frontend Agent] Implementing task {task_id}...")
+            logger.info(f"[Node: Frontend Agent] Implementing {task_id}...")
             project_task = f"Implement the following task strictly for files {target_files}:\n{description}"
             response = await self.execute(task_id, project_task, target_files)
 
@@ -60,7 +61,7 @@ class FrontendAgent(BaseAgent):
                     full_path = sandbox_dir / file_path
                     full_path.parent.mkdir(parents=True, exist_ok=True)
                     full_path.write_text(response, encoding="utf-8")
-                    logger.info(f"[Node: Backend Agent] file  added to the path {str(full_path)}")
+                    logger.info(f"[Node: Frontend Agent] file  added to the path {str(full_path)}")
                 except FileExistsError as e:
                     pass
                 state.data["codebase"][file_path] = {
@@ -68,14 +69,16 @@ class FrontendAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
-        for t in tasks:
-            if t.get("task_id") == task_id:
-                t["status"] = "FINISHED"
+            for t in tasks:
+                if t.get("task_id") == task_id:
+                    t["status"] = "FINISHED"
+        logger.info("[Node Frontend Agent] All Frontend tasks are implemented")
         return {
             "data": {
                 **state.data,
                 "tasks": tasks,
-                "frontend_tasks": frontend_tasks,
-                "codebase": state.data["codebase"]
+                "codebase": state.data["codebase"],
+                "agent_audit_trail": {"frontend_agent": {"status": "COMPLETED"}}
+
             }
         }

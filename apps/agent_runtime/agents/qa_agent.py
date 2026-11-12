@@ -9,7 +9,7 @@ from apps.agent_runtime.llm.prompts.code_orchestrator_prompt import build_qa_pro
 
 class QAAgent(BaseAgent):
     def __init__(self, llm_model):
-        super().__init__(agent_name="code-backend-agent", agent_type="backend_agent")
+        super().__init__(agent_name="code-qa-agent", agent_type="backend_agent")
         self.model = llm_model
         self.system_prompt = code_orchestrator_prompt.qa_system_prompt
     async def execute(self, task)-> Dict[str, Any]:
@@ -24,9 +24,11 @@ class QAAgent(BaseAgent):
 
         for file_path in target_files:
             full_path = sandbox_dir / file_path
+            logger.info(f"[QA Debug] Checking file path: {full_path} | Exists: {full_path.exists()}")
             if full_path.exists():
                 file_code[file_path] = full_path.read_text(encoding="utf-8")
             else:
+                logger.error(f"[QA Debug ERROR] File not found at expected path: {full_path}")
                 file_code[file_path] = "[FILE MISSING IN SANDBOX]"
 
         prompt = build_qa_prompt(task_id, description,target_files, file_code )
@@ -39,8 +41,16 @@ class QAAgent(BaseAgent):
     async def qa_node(self, state:AgentContext):
         logger.info("[Node: QA Agent] Starting QA sanity validation on implemented code...")
         data = state.data
-        tasks = state.data.get("tasks", [])
 
+        audit_trail = data.get("agent_audit_trail", {})
+        active_reporters = list(audit_trail.keys())
+
+        logger.info(f"[Node: QA Agent] Received contributions from parallel agents: {active_reporters}")
+        if not active_reporters:
+            logger.warning("[Node: QA Agent] Warning: No agent audit signatures found in state!")
+
+
+        tasks = state.data.get("tasks", [])
         codebase = state.data.get("codebase", {})
         if not codebase:
             logger.warning("[Node: QA Agent] No codebase files found in state to review.")
@@ -57,7 +67,6 @@ class QAAgent(BaseAgent):
 
             task_id = task.get("task_id")
             target_files = task.get("target_files", [])
-            print(f"target_files location is {str(target_files)}")
 
             logger.info(f"[Node: QA Agent] Performing sanity check on task {task_id} for files {target_files}...")
 
@@ -67,12 +76,15 @@ class QAAgent(BaseAgent):
             if "STATUS: PASS" in response.upper():
                 task["status"] = "VERIFIED"
                 task["qa_status"] = "VERIFIED"
+                logger.info(f"[Node: QA Agent] sanity check on task {task_id} is successfully finished and task status updated to VERIFIED")
             else:
                 task["status"] = "FAILED"
                 task["qa_status"] = "FAILED"
                 all_passed = False
+                logger.info(f"[Node: QA Agent] sanity check on task {task_id} is Failed  and task status updated to FAILED")
 
         data["code_orchestration_iterations"] = data.get("code_orchestration_iterations", 0) + 1
+
 
         if all_passed:
             data["code_orchestration_status"] = "VERIFIED"

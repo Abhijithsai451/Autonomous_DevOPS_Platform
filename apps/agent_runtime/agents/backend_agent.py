@@ -36,24 +36,30 @@ class BackendAgent(BaseAgent):
         logger.info("[Node: Backend Agent] Starting backend task implementation...")
 
         tasks = state.data.get("tasks", [])
-        backend_tasks = state.data.get("backend_tasks", [])
+        raw_tasks = state.data.get("backend_tasks", [])
+        backend_tasks = [
+            t for t in raw_tasks
+            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
+
         if not backend_tasks:
-            logger.warning("[Node: Backend Agent] No backend tasks found in state.")
+            logger.info("[Node: Backend Agent] No backend tasks found in state.")
             return {"data": state.data}
 
         if "codebase" not in state.data:
             state.data["codebase"] = {}
         sandbox_dir = settings.SANDBOX_DIR
-        sandbox_dir.mkdir(parents=True, exist_ok=True)
-        for task in backend_tasks:
-            if task.get("status") == "FINISHED":
-                continue
+        try:
+            sandbox_dir.mkdir(parents=True, exist_ok=True)
+        except FileExistsError:
+            pass
 
+        for task in backend_tasks:
             task_id = task.get("task_id")
-            target_files = task.get("target_files")
+            target_files = task.get("target_files",[])
             description = task.get("description", "")
 
-            logger.info(f"[Node: Backend Agent] Implementing task {task_id}...")
+            logger.info(f"[Node: Backend Agent] Implementing {task_id}...")
             project_task = f"Implement the following task strictly for files {target_files}:\n{description}"
             response = await self.execute(task_id, project_task, target_files)
 
@@ -74,11 +80,12 @@ class BackendAgent(BaseAgent):
             for t in tasks:
                 if t.get("task_id") == task_id:
                     t["status"] = "FINISHED"
+        logger.info("[Node Backend Agent] All backend tasks are implemented")
         return {
             "data": {
                 **state.data,
                 "tasks": tasks,
-                "backend_tasks": backend_tasks,
-                "codebase": state.data["codebase"]
+                "codebase": state.data["codebase"],
+                "agent_audit_trail": {"backend_agent": {"status": "COMPLETED"}}
             }
         }
