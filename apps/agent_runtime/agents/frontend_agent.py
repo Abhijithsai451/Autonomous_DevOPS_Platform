@@ -69,9 +69,10 @@ class FrontendAgent(BaseAgent):
                     "task_id": task_id
                 }
             task["status"] = "FINISHED"
-        for t in tasks:
-            if t.get("task_id") == task_id:
-                t["status"] = "FINISHED"
+            for t in tasks:
+                if t.get("task_id") == task_id:
+                    t["status"] = "FINISHED"
+        logger.info("[Node Frontend Agent] All Frontend tasks are implemented")
         return {
             "data": {
                 **state.data,

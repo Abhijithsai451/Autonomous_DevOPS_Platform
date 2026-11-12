@@ -80,6 +80,7 @@ class BackendAgent(BaseAgent):
             for t in tasks:
                 if t.get("task_id") == task_id:
                     t["status"] = "FINISHED"
+        logger.info("[Node Backend Agent] All backend tasks are implemented")
         return {
             "data": {
                 **state.data,

@@ -16,10 +16,10 @@ class CodeOrchestratorAgent(BaseAgent):
         return {}
 
     async def code_orchestrator_node(self, state: AgentContext) -> AgentContext:
-        logger.info("[Node: Code Orchestrator] Delegating tasks to coding specialists...")
+        logger.info("[Node: Code Orchestrator] Inspecting Task list to see any pending tasks...")
         tasks = state.data.get("tasks",[])
         if not tasks:
-            logger.warning("[Node: Code Orchestrator] No tasks retrieved from the State")
+            logger.info("[Node: Code Orchestrator] No tasks retrieved from the State")
             state.data["code_orchestration_status"] = "FAILED"
             return state
 
@@ -27,6 +27,7 @@ class CodeOrchestratorAgent(BaseAgent):
             t for t in tasks
             if t.get("status") in ["PENDING", "FAILED","UNVERIFIED"] or not t.get("status")
         ]
+        logger.info("[Node: Code Orchestrator] Delegating tasks to coding specialists...")
 
         if not pending_tasks:
             logger.info("[Node: Code Orchestrator] All tasks are already completed and verified.")
@@ -46,6 +47,7 @@ class CodeOrchestratorAgent(BaseAgent):
     def _route_after_code_orch(self, state: AgentContext)-> str:
         data = state.data
         status = data.get("code_orchestration_status")
+        tasks = data.get("tasks", [])
         max_iterations = 3
 
         if data.get("code_orchestration_iterations",0)> max_iterations:
