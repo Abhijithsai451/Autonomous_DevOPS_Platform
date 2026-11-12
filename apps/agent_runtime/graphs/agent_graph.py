@@ -1,3 +1,4 @@
+import time
 from typing import Optional, Dict, Any
 from langgraph.checkpoint.redis.aio import AsyncRedisSaver
 from langgraph.constants import END
@@ -15,6 +16,8 @@ from apps.agent_runtime.agents.task_orchestrator import TaskOrchestrator
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.infrastructure.redis_client import agent_redis_client
 from apps.agent_runtime.llm.llm_config import LLMClient
+from packages.telemetry.context.correlation import bind_correlation_context
+from packages.telemetry.metrics import metrics_registry
 
 
 class AgentGraph:
@@ -70,12 +73,7 @@ class AgentGraph:
         graph.add_edge("planner", "code_orchestrator")
         graph.add_conditional_edges("code_orchestrator",
                                     self.code_orchestrator._route_after_code_orch,
-                                    path_map={
-                                        "backend_agent": "backend_agent",
-                                        "frontend_agent": "frontend_agent",
-                                        "devops_agent": "devops_agent",
-                                        "verified": "reviewer",
-                                    })
+                                    ["backend_agent", "frontend_agent", "devops_agent", "reviewer"])
 
         graph.add_edge("backend_agent","qa_agent")
         graph.add_edge("frontend_agent","qa_agent")
@@ -97,7 +95,25 @@ class AgentGraph:
         return graph.compile(checkpointer=self.checkpointer)
 
     async def ainvoke(self, initial_state: AgentContext, config: Optional[Dict[str, Any]] = None) -> AgentContext:
-        return await self.workflow.ainvoke(initial_state, config=config)
+        start_time = time.time()
+        with bind_correlation_context(
+                task_id=initial_state.task_id,
+                workflow_instance_id=initial_state.workflow_instance_id,
+                run_id=initial_state.run_id
+        ):
+            try:
+                result = await self.workflow.ainvoke(initial_state, config=config)
+                duration = time.time() - start_time
+
+
+                metrics_registry.record_agent_run(agent_type="master_workflow", status="success", duration=duration)
+                return result
+
+            except Exception as e:
+                duration = time.time() - start_time
+
+                metrics_registry.record_agent_run(agent_type="master_workflow", status="failure", duration=duration)
+                raise e
 
 
 

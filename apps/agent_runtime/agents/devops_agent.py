@@ -34,7 +34,11 @@ class DevopsAgent(BaseAgent):
     async def devops_node(self, state:AgentContext):
         logger.info("[Node: DevOps Agent] Starting DevOps task implementation...")
         tasks = state.data.get("tasks", [])
-        devops_tasks = state.data.get("devops_tasks", [])
+        raw_tasks = state.data.get("devops_tasks", [])
+        devops_tasks = [
+            t for t in raw_tasks
+            if t.get("status") in ["PENDING", "FAILED", "UNVERIFIED"] or not t.get("status")
+        ]
         if not devops_tasks:
             logger.warning("[Node: DevOps Agent] No DevOps tasks found in state.")
             return {"data": state.data}
@@ -44,14 +48,11 @@ class DevopsAgent(BaseAgent):
         sandbox_dir = settings.SANDBOX_DIR
         sandbox_dir.mkdir(parents=True, exist_ok=True)
         for task in devops_tasks:
-            if task.get("status") == "FINISHED":
-                continue
-
             task_id = task.get("task_id")
             target_files = task.get("target_files")
             description = task.get("description", "")
 
-            logger.info(f"[Node: DevOps Agent] Implementing task {task_id}...")
+            logger.info(f"[Node: DevOps Agent] Implementing {task_id}...")
             project_task = f"Implement the following task strictly for files {target_files}:\n{description}"
             response = await self.execute(task_id, project_task, target_files)
 
@@ -60,7 +61,7 @@ class DevopsAgent(BaseAgent):
                     full_path = sandbox_dir / file_path
                     full_path.parent.mkdir(parents=True, exist_ok=True)
                     full_path.write_text(response, encoding="utf-8")
-                    logger.info(f"[Node: Backend Agent] file  added to the path {str(full_path)}")
+                    logger.info(f"[Node: Devops Agent] file  added to the path {str(full_path)}")
                 except FileExistsError as e:
                     pass
                 state.data["codebase"][file_path] = {
@@ -75,7 +76,7 @@ class DevopsAgent(BaseAgent):
             "data": {
                 **state.data,
                 "tasks": tasks,
-                "devops_tasks": devops_tasks,
-                "codebase": state.data["codebase"]
+                "codebase": state.data["codebase"],
+                "agent_audit_trail": {"devops_agent": {"status": "COMPLETED"}}
             }
         }

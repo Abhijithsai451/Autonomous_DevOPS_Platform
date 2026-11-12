@@ -19,7 +19,7 @@ class PlannerAgent(BaseAgent):
             message=prompt,
             system_prompt=self.system_prompt,
         )
-
+        print(response)
         try:
             clean_json = response.strip().removeprefix("```json").removesuffix("```").strip()
             return json.loads(clean_json)
@@ -30,7 +30,7 @@ class PlannerAgent(BaseAgent):
                 "architecture_summary": task_spec.get("executive_summary", ""),
                 "tasks": [
                     {
-                        "task_id": "TASK-1",
+                        "task_id": "Task-1",
                         "layer": "BACKEND",
                         "title": "Implement core requirement",
                         "description": str(task_spec.get("in_scope", ["Implement user request"])),
@@ -52,7 +52,6 @@ class PlannerAgent(BaseAgent):
             }
 
         plan = await self.execute(task_spec)
-
         state.data["execution_plan"] = plan
         state.data["tasks"] = plan.get("tasks", [])
         state.data["status"] = "PLANNING_COMPLETED"
