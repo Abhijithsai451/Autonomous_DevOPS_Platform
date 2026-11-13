@@ -26,10 +26,68 @@ class TestOrchestrator(BaseAgent):
         return response
 
     async def test_orchestrator_node(self, state: AgentContext) -> AgentContext:
-        logger.info("[Node: Test Orchestrator] Initializing pre-production testing phase...")
-        if "test_status" not in state.data:
-            state.data["test_status"] = "PENDING"
-        return state
+        logger.info("[Node: Test Orchestrator] Analyzing codebase and planning test tasks...")
+        data = state.data
+        sandbox_dir = settings.SANDBOX_DIR
+
+        # 1. Track iteration/retry count (max 3 tries)
+        iterations = data.get("test_orchestration_iterations", 0) + 1
+        data["test_orchestration_iterations"] = iterations
+
+        if iterations > 3:
+            logger.warning("[Test Orchestrator] Max test retry limit (3) reached. Bypassing loop to reviewer.")
+            data["test_status"] = "MAX_RETRIES_EXCEEDED"
+            return {"data": data}
+
+        # 2. Gather codebase summary from state/sandbox registry
+        codebase = data.get("codebase", {})
+        code_summary = ""
+        for file_path, info in codebase.items():
+            abs_path = Path(info.get("absolute_path", sandbox_dir / file_path))
+            if abs_path.exists():
+                code_summary += f"\n--- FILE: {file_path} ---\n{abs_path.read_text(encoding='utf-8')}\n"
+
+        # 3. Build prompt and invoke LLM
+        prompt_payload = build_test_orchestrator_prompt(code_summary)
+        raw_response = await self.execute(
+            message=prompt_payload["message"],
+            system_prompt=self.system_prompt
+        )
+
+        # 4. Safely parse LLM JSON output into state tasks
+        try:
+            cleaned_response = raw_response.strip()
+            if cleaned_response.startswith("```"):
+                cleaned_response = cleaned_response.split("```")[1]
+                if cleaned_response.startswith("json"):
+                    cleaned_response = cleaned_response[4:].strip()
+
+            test_tasks = json.loads(cleaned_response)
+        except Exception as e:
+            logger.error(f"[Test Orchestrator Error] Failed to parse JSON test tasks: {e}. Raw: {raw_response}")
+            # Fallback default test tasks to ensure pipeline stability
+            test_tasks = [
+                {
+                    "task_id": "TEST-INT-01",
+                    "layer": "INTEGRATION",
+                    "target_files": ["src/tests/integration/api.integration.test.ts"],
+                    "description": "Fallback integration test suite for core routes.",
+                    "status": "PENDING"
+                },
+                {
+                    "task_id": "TEST-E2E-01",
+                    "layer": "E2E",
+                    "target_files": ["src/tests/e2e/user_journey.spec.ts"],
+                    "description": "Fallback E2E user journey test suite.",
+                    "status": "PENDING"
+                }
+            ]
+
+        data["test_tasks"] = test_tasks
+        data["test_status"] = "PENDING"
+        logger.info(f"[Node: Test Orchestrator] Successfully planned {len(test_tasks)} test tasks.")
+
+        return {"data": data}
 
     async def integration_test_node(self, state: AgentContext) -> AgentContext:
         logger.info("[Node: Integration Test Agent] Generating backend integration test suite...")
