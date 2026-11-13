@@ -29,7 +29,6 @@ class TaskOrchestrator(BaseAgent):
             message = prompt,
             system_prompt=self.system_prompt,
         )
-        #print(response)
         try:
             clean_json = response.strip().removeprefix("```json").removesuffix("```").strip()
             return json.loads(clean_json)

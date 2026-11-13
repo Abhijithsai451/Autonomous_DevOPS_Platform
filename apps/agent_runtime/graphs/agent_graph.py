@@ -13,6 +13,7 @@ from apps.agent_runtime.agents.planner_agent import PlannerAgent
 from apps.agent_runtime.agents.qa_agent import QAAgent
 from apps.agent_runtime.agents.review_agent import ReviewAgent
 from apps.agent_runtime.agents.task_orchestrator import TaskOrchestrator
+from apps.agent_runtime.agents.test_orchestrator import TestOrchestrator
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.infrastructure.redis_client import agent_redis_client
 from apps.agent_runtime.llm.llm_config import LLMClient
@@ -37,6 +38,8 @@ class AgentGraph:
         self.devops = DevopsAgent(self.llm)
         self.qa = QAAgent(self.llm)
 
+        self.test_orchestrator = TestOrchestrator(self.llm)
+
         self.reviewer = ReviewAgent(self.llm)
         self.deployer = DeployAgent(self.llm)
 
@@ -54,6 +57,11 @@ class AgentGraph:
         graph.add_node("frontend_agent", self.frontend.frontend_node)
         graph.add_node("devops_agent",self.devops.devops_node)
         graph.add_node("qa_agent", self.qa.qa_node)
+
+        graph.add_node("test_orchestrator", self.test_orchestrator.test_orchestrator_node)
+        graph.add_node("integration_test_agent", self.test_orchestrator.integration_test_node)
+        graph.add_node("e2e_test_agent", self.test_orchestrator.e2e_test_node)
+        graph.add_node("test_runner_agent", self.test_orchestrator.test_runner_node)
 
         graph.add_node("reviewer", self.reviewer.review_node)
         graph.add_node("deployer", self.deployer.deploy_node)
@@ -73,13 +81,21 @@ class AgentGraph:
         graph.add_edge("planner", "code_orchestrator")
         graph.add_conditional_edges("code_orchestrator",
                                     self.code_orchestrator._route_after_code_orch,
-                                    ["backend_agent", "frontend_agent", "devops_agent", "reviewer"])
+                                    ["backend_agent", "frontend_agent", "devops_agent", "test_orchestrator"])
 
         graph.add_edge("backend_agent","qa_agent")
         graph.add_edge("frontend_agent","qa_agent")
         graph.add_edge("devops_agent","qa_agent")
 
         graph.add_edge("qa_agent", "code_orchestrator")
+
+        graph.add_conditional_edges("test_orchestrator",
+                                    self.test_orchestrator._route_after_test_orch,
+                                    ["integration_test_agent", "e2e_test_agent", "test_runner_agent", "reviewer", "code_orchestrator"])
+        graph.add_edge("integration_test_agent", "test_runner_agent")
+        graph.add_edge("e2e_test_agent", "test_runner_agent")
+        graph.add_edge("test_runner_agent", "test_orchestrator")
+
 
         graph.add_conditional_edges(
             "reviewer",
