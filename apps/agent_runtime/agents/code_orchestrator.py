@@ -47,15 +47,14 @@ class CodeOrchestratorAgent(BaseAgent):
     def _route_after_code_orch(self, state: AgentContext)-> str:
         data = state.data
         status = data.get("code_orchestration_status")
-        tasks = data.get("tasks", [])
         max_iterations = 3
 
         if data.get("code_orchestration_iterations",0)> max_iterations:
             logger.warning("[Node: Code Orchestrator] Max iterations reached. Breaking loop and routing to reviewer.")
-            return "reviewer"
+            return "test_orchestrator"
 
         if status == "VERIFIED":
-            return "reviewer"
+            return "test_orchestrator"
 
         pending_backend = data.get("backend_tasks", [])
         pending_frontend = data.get("frontend_tasks", [])
@@ -72,6 +71,6 @@ class CodeOrchestratorAgent(BaseAgent):
 
         if not routes:
             logger.info("[Node: Code Orchestrator] No pending tasks remain. Routing to review agent.")
-            return "reviewer"
+            return "test_orchestrator"
 
         return routes

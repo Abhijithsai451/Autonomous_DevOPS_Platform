@@ -9,7 +9,7 @@ class ReviewAgent(BaseAgent):
     def __init__(self,llm_model):
         super().__init__(agent_name="code-review-agent", agent_type="review_agent")
         self.model = llm_model
-        self.prompt = review_prompt
+        self.system_prompt = review_prompt
 
     async def execute(self, state: AgentContext) -> Dict[str, Any]:
         input = state.prompt
