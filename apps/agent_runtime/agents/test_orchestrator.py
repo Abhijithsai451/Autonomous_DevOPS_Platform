@@ -10,7 +10,8 @@ from apps.agent_runtime.agents.base_agent import BaseAgent
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
 from apps.agent_runtime.llm.prompts import test_orchestrator_prompt
-from apps.agent_runtime.llm.prompts.test_orchestrator_prompt import build_test_orchestrator_prompt
+from apps.agent_runtime.llm.prompts.test_orchestrator_prompt import build_test_orchestrator_prompt, \
+    build_integration_test_prompt
 from apps.agent_runtime.repository.rag_repository import KBRepository
 
 
@@ -64,8 +65,8 @@ class TestOrchestrator(BaseAgent):
             logger.warning(f"Task Orchestrator: Failed to retrieve RAG context: {ex}")
         prompt_payload = build_test_orchestrator_prompt(code_summary, context)
         raw_response = await self.execute(
-            message=prompt_payload["message"],
-            system_prompt=self.system_prompt
+            message=prompt_payload,
+            system_prompt=self.test_orchestrator_system_prompt
         )
         try:
             cleaned_response = raw_response.strip()
@@ -102,87 +103,102 @@ class TestOrchestrator(BaseAgent):
 
     async def integration_test_node(self, state: AgentContext) -> AgentContext:
         logger.info("[Node: Integration Test Agent] Generating backend integration test suite...")
-        codebase = state.data.get("codebase", {})
+        data = state.data
+
+        test_tasks = data.get("test_tasks", [])
+        integration_tasks = [
+            t for t in test_tasks
+            if t.get("layer") == "INTEGRATION" and t.get("status") in ["PENDING", "FAILED"]
+        ]
+
+        if not integration_tasks:
+            logger.info("[Node: Integration Test Agent] No pending integration test tasks found.")
+            return {"data": data}
+
         sandbox_dir = settings.SANDBOX_DIR
+        try:
+            sandbox_dir.mkdir(parents=True, exist_ok=True)
+        except FileExistsError:
+            pass
+        if "codebase" not in data:
+            data["codebase"] = {}
 
         code_summary = ""
-        for file_path, info in codebase.items():
+        for file_path, info in data.get("codebase", {}).items():
             abs_path = Path(info.get("absolute_path", sandbox_dir / file_path))
             if abs_path.exists():
                 code_summary += f"\n--- FILE: {file_path} ---\n{abs_path.read_text(encoding='utf-8')}\n"
 
-        prompt = f"Generate integration tests for this codebase:\n{code_summary}"
-        test_code = await self.execute(prompt, self.integration_test_prompt)
+        for task in integration_tasks:
+            task_id = task.get("task_id")
+            target_files = task.get("target_files", [])
+            description = task.get("description", "")
+
+            logger.info(f"[Node: Integration Test Agent] Implementing task {task_id} for files {target_files}...")
+
+            context = ""
+            try:
+                with next(db_client.get_session()) as session:
+                    repo = KBRepository(db=session)
+                    rag_query = "integration testing standards backend api testing mock database contracts"
+                    context = await repo.retrieve_context(rag_query, 3)
+            except Exception as ex:
+                logger.warning(f"Integration Test Agent: Failed to retrieve RAG context: {ex}")
+
+            user_prompt = build_integration_test_prompt(description, code_summary, context)
+
+            response = await self.execute(message=user_prompt, system_prompt=self.integration_test_system_prompt)
+            clean_code = self._extract_code_from_markdown(response)
+
+            for file_path in target_files:
+                full_path = sandbox_dir / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                full_path.write_text(clean_code, encoding="utf-8")
+                logger.info(f"[Node: Integration Test Agent] Integration test file added to {str(full_path)}")
+
+                data["codebase"][file_path] = {
+                    "absolute_path": str(full_path),
+                    "task_id": task_id
+                }
+
+            task["status"] = "FINISHED"
+            for t in test_tasks:
+                if t.get("task_id") == task_id:
+                    t["status"] = "FINISHED"
+
+        logger.info("[Node: Integration Test Agent] All integration test tasks are implemented.")
+        return {
+            "data": {
+                **data,
+                "test_tasks": test_tasks,
+                "codebase": data["codebase"],
+                "agent_audit_trail": {**data.get("agent_audit_trail", {}),
+                                      "integration_test_agent": {"status": "COMPLETED"}}
+            }
+        }
 
 
-        test_file = sandbox_dir / "src" / "tests" / "integration" / "api.integration.test.ts"
-        test_file.parent.mkdir(parents=True, exist_ok=True)
-        test_file.write_text(test_code, encoding="utf-8")
-        logger.info(f"[Node: Integration Test Agent] Written to {test_file}")
 
-        return {"data": {**state.data, "integration_test_written": True}}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     async def e2e_test_node(self, state: AgentContext) -> AgentContext:
         logger.info("[Node: E2E Test Agent] Generating end-to-end test suite...")
-        codebase = state.data.get("codebase", {})
-        sandbox_dir = settings.SANDBOX_DIR
-        code_summary = ""
-        for file_path, info in codebase.items():
-            abs_path = Path(info.get("absolute_path", sandbox_dir / file_path))
-            if abs_path.exists():
-                code_summary += f"\n--- FILE: {file_path} ---\n{abs_path.read_text(encoding='utf-8')}\n"
 
-        prompt = f"Generate E2E tests for this codebase:\n{code_summary}"
-        test_code = await self.execute(prompt, self.e2e_test_prompt)
-        test_file = sandbox_dir / "src" / "tests" / "e2e" / "user_journey.spec.ts"
-        test_file.parent.mkdir(parents=True, exist_ok=True)
-        test_file.write_text(test_code, encoding="utf-8")
-        logger.info(f"[Node: E2E Test Agent] Written to {test_file}")
-
-        return {"data": {**state.data, "e2e_test_written": True}}
     async def test_runner_node(self, state: AgentContext) -> AgentContext:
         logger.info("[Node: Test Runner Agent] Executing test suite in sandbox terminal...")
-        sandbox_dir = settings.SANDBOX_DIR
 
-        try:
-            result = subprocess.run(
-                ["npm", "test"],
-                cwd=sandbox_dir,
-                capture_output=True,
-                text=True,
-                timeout=90
-            )
-            test_output = result.stdout + "\n" + result.stderr
-            logger.info(f"[Test Runner] Exit Code: {result.returncode}")
-
-            state.data["test_telemetry"] = {
-                "exit_code": result.returncode,
-                "output": test_output[:2000]
-            }
-
-            if result.returncode == 0:
-                state.data["test_status"] = "PASSED"
-                logger.info("[Node: Test Runner] All test suites passed successfully!")
-            else:
-                state.data["test_status"] = "FAILED"
-                logger.warning("[Node: Test Runner] Test failures detected. Injecting remediation task.")
-
-                tasks = state.data.get("tasks", [])
-                tasks.append({
-                    "task_id": f"FIX-TESTS-{len(tasks) + 1}",
-                    "description": f"Pre-production test failure remediation:\n{test_output[:1000]}",
-                    "target_files": list(state.data.get("codebase", {}).keys())[:2],
-                    "layer": "BACKEND",
-                    "status": "FAILED"
-                })
-                state.data["tasks"] = tasks
-                state.data["code_orchestration_status"] = "PENDING"
-
-        except Exception as e:
-            logger.error(f"[Test Runner Error] Execution failed: {e}")
-            state.data["test_status"] = "ERROR"
-
-        return {"data": state.data}
 
     def _route_after_test_orch(self, state: AgentContext)-> str:
         status = state.data.get("test_status")

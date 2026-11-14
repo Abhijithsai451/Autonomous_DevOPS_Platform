@@ -70,6 +70,28 @@ Your sole responsibility is to generate robust, executable integration test suit
 Return ONLY the raw executable test code inside a single markdown code block (e.g., ```typescript ... ``` or ```python ... ```). No conversational intro or outro.
 """
 
+
+def build_integration_test_prompt(task_description: str, code_summary: str, rag_context: str) -> str:
+    """Builds the user message payload integrating the integration test task, codebase state, and retrieved testing standards."""
+    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
+
+    return f"""### INTEGRATION TEST TASK SPECIFICATION
+    \"\"\"
+    {task_description.strip()}
+    \"\"\"
+
+    ### CODEBASE IMPLEMENTATION SUMMARY
+    \"\"\"
+    {code_summary.strip()}
+    \"\"\"
+
+    ### ENTERPRISE TESTING & ARCHITECTURE STANDARDS (RAG)
+    \"\"\"
+    {context_section}
+    \"\"\"
+
+    Write the fully realized, executable integration test code that fulfills this task specification. Output ONLY valid code inside markdown blocks.
+    """
 integration_prompt =""""""
 
 e2e_system_prompt = """
