@@ -56,9 +56,10 @@ class TestOrchestrator(BaseAgent):
             if abs_path.exists():
                 code_summary += f"\n--- FILE: {file_path} ---\n{abs_path.read_text(encoding='utf-8')}\n"
         try:
+            rag_query = "website requirements, feature catalog, quality standards, accessibility, and testing acceptance criteria"
             with next(db_client.get_session()) as session:
                 repo = KBRepository(db=session)
-                context = await repo.retrieve_context(user_request, 3)
+                context = await repo.retrieve_context(rag_query, 3)
         except Exception as ex:
             logger.warning(f"Task Orchestrator: Failed to retrieve RAG context: {ex}")
         prompt_payload = build_test_orchestrator_prompt(code_summary, context)
