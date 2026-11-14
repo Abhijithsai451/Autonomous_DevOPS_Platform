@@ -1,21 +1,33 @@
+import json
+from asyncio import subprocess
 from pathlib import Path
 from typing import Dict, Any
 
 from langgraph.types import Send
-
+from apps.agent_runtime.infrastructure.database import agent_runtime_db_client as db_client
 from apps.agent_runtime.config.settings import agent_runtime_settings as settings
 from apps.agent_runtime.agents.base_agent import BaseAgent
 from apps.agent_runtime.domain.agent_contract import AgentContext
 from apps.agent_runtime.infrastructure.struct_logger import struct_logger as logger
+from apps.agent_runtime.llm.prompts import test_orchestrator_prompt
+from apps.agent_runtime.llm.prompts.test_orchestrator_prompt import build_test_orchestrator_prompt
+from apps.agent_runtime.repository.rag_repository import KBRepository
 
 
 class TestOrchestrator(BaseAgent):
     def __init__(self,llm_model):
         super().__init__(agent_name="system-planner", agent_type="planner")
         self.model = llm_model
-        self.integration_test_prompt = None
-        self.e2e_test_prompt = None
-        self.test_runner_prompt = None
+        # System Prompts
+        self.test_orchestrator_system_prompt = test_orchestrator_prompt.test_orchestrator_system_prompt
+        self.integration_system_prompt = test_orchestrator_prompt.integration_system_prompt
+        self.e2e_system_prompt = test_orchestrator_prompt.e2e_system_prompt
+        self.runner_system_prompt = test_orchestrator_prompt.runner_system_prompt
+
+        # User Prompts
+        self.integration_test_prompt = test_orchestrator_prompt.integration_prompt
+        self.e2e_test_prompt = test_orchestrator_prompt.e2e_prompt
+        self.test_runner_prompt = test_orchestrator_prompt.runner_prompt
 
     async def execute(self, prompt, system_prompt)-> Dict[str, Any]:
         logger.info("Agent Prompt Created and Invoking the LLM")
@@ -29,8 +41,6 @@ class TestOrchestrator(BaseAgent):
         logger.info("[Node: Test Orchestrator] Analyzing codebase and planning test tasks...")
         data = state.data
         sandbox_dir = settings.SANDBOX_DIR
-
-        # 1. Track iteration/retry count (max 3 tries)
         iterations = data.get("test_orchestration_iterations", 0) + 1
         data["test_orchestration_iterations"] = iterations
 
@@ -39,22 +49,23 @@ class TestOrchestrator(BaseAgent):
             data["test_status"] = "MAX_RETRIES_EXCEEDED"
             return {"data": data}
 
-        # 2. Gather codebase summary from state/sandbox registry
         codebase = data.get("codebase", {})
         code_summary = ""
         for file_path, info in codebase.items():
             abs_path = Path(info.get("absolute_path", sandbox_dir / file_path))
             if abs_path.exists():
                 code_summary += f"\n--- FILE: {file_path} ---\n{abs_path.read_text(encoding='utf-8')}\n"
-
-        # 3. Build prompt and invoke LLM
-        prompt_payload = build_test_orchestrator_prompt(code_summary)
+        try:
+            with next(db_client.get_session()) as session:
+                repo = KBRepository(db=session)
+                context = await repo.retrieve_context(user_request, 3)
+        except Exception as ex:
+            logger.warning(f"Task Orchestrator: Failed to retrieve RAG context: {ex}")
+        prompt_payload = build_test_orchestrator_prompt(code_summary, context)
         raw_response = await self.execute(
             message=prompt_payload["message"],
             system_prompt=self.system_prompt
         )
-
-        # 4. Safely parse LLM JSON output into state tasks
         try:
             cleaned_response = raw_response.strip()
             if cleaned_response.startswith("```"):
@@ -65,7 +76,6 @@ class TestOrchestrator(BaseAgent):
             test_tasks = json.loads(cleaned_response)
         except Exception as e:
             logger.error(f"[Test Orchestrator Error] Failed to parse JSON test tasks: {e}. Raw: {raw_response}")
-            # Fallback default test tasks to ensure pipeline stability
             test_tasks = [
                 {
                     "task_id": "TEST-INT-01",
@@ -135,7 +145,7 @@ class TestOrchestrator(BaseAgent):
 
         try:
             result = subprocess.run(
-                ["npm", "test"],  # Or ["pytest"] depending on your stack
+                ["npm", "test"],
                 cwd=sandbox_dir,
                 capture_output=True,
                 text=True,

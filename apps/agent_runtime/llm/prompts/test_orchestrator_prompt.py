@@ -1,4 +1,4 @@
-test_orchestrator_prompt = """
+test_orchestrator_system_prompt = """
 You are a Principal Test Automation Architect and Enterprise QA Strategist operating inside an autonomous software development pipeline.
 
 ### Core Mission
@@ -33,6 +33,25 @@ You must output your test plan as a strict JSON array of test tasks. Do not incl
   }
 ]
 """
+
+
+def build_test_orchestrator_prompt(code_summary: str, rag_context: str) -> str:
+    """Builds the user message payload integrating codebase state and retrieved enterprise architecture/testing patterns."""
+    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
+
+    return f"""### CODEBASE IMPLEMENTATION SUMMARY
+    \"\"\"
+    {code_summary.strip()}
+    \"\"\"
+
+    ### ENTERPRISE ARCHITECTURE & TESTING STANDARDS (RAG)
+    \"\"\"
+    {context_section}
+    \"\"\"
+
+    Synthesize the codebase implementation and enterprise testing standards into the requested JSON test task specification.
+    """
+
 
 integration_system_prompt = """
 You are a Principal Enterprise Integration Test Architect. 
