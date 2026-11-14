@@ -35,24 +35,6 @@ You must output your test plan as a strict JSON array of test tasks. Do not incl
 """
 
 
-def build_test_orchestrator_prompt(code_summary: str, rag_context: str) -> str:
-    """Builds the user message payload integrating codebase state and retrieved enterprise architecture/testing patterns."""
-    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
-
-    return f"""### CODEBASE IMPLEMENTATION SUMMARY
-    \"\"\"
-    {code_summary.strip()}
-    \"\"\"
-
-    ### ENTERPRISE ARCHITECTURE & TESTING STANDARDS (RAG)
-    \"\"\"
-    {context_section}
-    \"\"\"
-
-    Synthesize the codebase implementation and enterprise testing standards into the requested JSON test task specification.
-    """
-
-
 integration_system_prompt = """
 You are a Principal Enterprise Integration Test Architect. 
 Your sole responsibility is to generate robust, executable integration test suites (e.g., Jest/Supertest or Pytest) for backend services, database models, and API routes.
@@ -71,28 +53,6 @@ Return ONLY the raw executable test code inside a single markdown code block (e.
 """
 
 
-def build_integration_test_prompt(task_description: str, code_summary: str, rag_context: str) -> str:
-    """Builds the user message payload integrating the integration test task, codebase state, and retrieved testing standards."""
-    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
-
-    return f"""### INTEGRATION TEST TASK SPECIFICATION
-    \"\"\"
-    {task_description.strip()}
-    \"\"\"
-
-    ### CODEBASE IMPLEMENTATION SUMMARY
-    \"\"\"
-    {code_summary.strip()}
-    \"\"\"
-
-    ### ENTERPRISE TESTING & ARCHITECTURE STANDARDS (RAG)
-    \"\"\"
-    {context_section}
-    \"\"\"
-
-    Write the fully realized, executable integration test code that fulfills this task specification. Output ONLY valid code inside markdown blocks.
-    """
-integration_prompt =""""""
 
 e2e_system_prompt = """
 ou are a Principal Enterprise E2E & User Journey Test Automation Engineer.
@@ -127,11 +87,66 @@ STATUS: [ANALYZED]
 ROOT_CAUSE: <Concise explanation of why the test suite failed>
 SUGGESTED_FIX: <Specific technical fix required>
 """
-runner_prompt =""""""
+#%% Prompt Builders
 
-def build_prompt()-> str:
+def build_test_orchestrator_prompt(code_summary: str, rag_context: str) -> str:
+    """Builds the user message payload integrating codebase state and retrieved enterprise architecture/testing patterns."""
+    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
+
+    return f"""### CODEBASE IMPLEMENTATION SUMMARY
+    \"\"\"
+    {code_summary.strip()}
+    \"\"\"
+
+    ### ENTERPRISE ARCHITECTURE & TESTING STANDARDS (RAG)
+    \"\"\"
+    {context_section}
+    \"\"\"
+
+    Synthesize the codebase implementation and enterprise testing standards into the requested JSON test task specification.
     """
-    Here we use the data from the nodes to add to the prompt and build a dictionary to directly be able to send to the model
-    :return:
+
+def build_integration_test_prompt(task_description: str, code_summary: str, rag_context: str) -> str:
+    """Builds the user message payload integrating the integration test task, codebase state, and retrieved testing standards."""
+    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
+
+    return f"""### INTEGRATION TEST TASK SPECIFICATION
+    \"\"\"
+    {task_description.strip()}
+    \"\"\"
+
+    ### CODEBASE IMPLEMENTATION SUMMARY
+    \"\"\"
+    {code_summary.strip()}
+    \"\"\"
+
+    ### ENTERPRISE TESTING & ARCHITECTURE STANDARDS (RAG)
+    \"\"\"
+    {context_section}
+    \"\"\"
+
+    Write the fully realized, executable integration test code that fulfills this task specification. Output ONLY valid code inside markdown blocks.
     """
-    return "{message, system_prompt}"
+
+
+def build_e2e_test_prompt(task_description: str, code_summary: str, rag_context: str) -> str:
+    """Builds the user message payload integrating the e2e test task, codebase state, and retrieved testing standards."""
+    context_section = rag_context.strip() if rag_context else "No prior enterprise testing guidelines retrieved."
+
+    return f"""### E2E TEST TASK SPECIFICATION
+        \"\"\"
+        {task_description.strip()}
+        \"\"\"
+
+        ### CODEBASE IMPLEMENTATION SUMMARY
+        \"\"\"
+        {code_summary.strip()}
+        \"\"\"
+
+        ### ENTERPRISE TESTING & ARCHITECTURE STANDARDS (RAG)
+        \"\"\"
+        {context_section}
+        \"\"\"
+
+        Write the fully realized, executable integration test code that fulfills this task specification. Output ONLY valid code inside markdown blocks.
+        """
